@@ -1,0 +1,7 @@
+dist
+.dist
+node_modules
+package-lock.json
+.modern.js
+.ultramodern.js
+.DS_Store
