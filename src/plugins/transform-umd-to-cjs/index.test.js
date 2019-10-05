@@ -22,7 +22,7 @@ ${code}
 	});
 `;
 
-describe('transform-umd-commonjs', () => {
+describe('transform-umd-to-cjs', () => {
 	it('should transform noop UMD', () => {
 		const code = webpackUmd({}, '');
 		expect(babel(code, CONFIG)).toMatchInlineSnapshot(`""`);

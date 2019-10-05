@@ -3,11 +3,7 @@
  */
 
 export default ({ types: t }) => ({
-	name: 'transform-umd-cjs',
-	// pre() {
-	// 	this.file.opts.generatorOpts.retainLines = false;
-	// 	this.file.opts.generatorOpts.comments = false;
-	// },
+	name: 'transform-umd-to-cjs',
 	visitor: {
 		Program: {
 			enter(path, state) {
