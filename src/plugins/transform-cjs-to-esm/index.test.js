@@ -6,7 +6,7 @@ const CONFIG = {
 	plugins: [plugin]
 };
 
-describe('transform-umd-commonjs', () => {
+describe('transform-cjs-esm', () => {
 	it('should transform noop UMD', () => {
 		expect(babel(dent`
 			function factory() {}
@@ -89,6 +89,72 @@ describe('transform-umd-commonjs', () => {
 				const _d = 3;
 				export const foo = 'bar';
 				export { a, _b as b, _c as c, _d as d };"
+			`);
+		});
+
+		it('should resolve intermediary export objects', () => {
+			expect(babel(dent`
+				const a = 1;
+				const b = 2;
+				const iface = {
+				  a,
+				  b,
+				};
+				module.exports = iface;
+			`, CONFIG)).toMatchInlineSnapshot(`
+				"const a = 1;
+				const b = 2;
+				export { a, b };"
+			`);
+		});
+
+		it('should convert export self-references to locals', () => {
+			expect(babel(dent`
+				const iface = {
+				  a() {}
+				};
+				iface.a();
+				module.exports = iface;
+			`, CONFIG)).toMatchInlineSnapshot(`
+				"function _a() {}
+				_a();
+				export { _a as a };"
+			`);
+		});
+
+		it('should retain export self-references when runtime use is required', () => {
+			expect(babel(dent`
+				const iface = {
+				  a: () => {}
+				};
+				iface.a();
+				console.log(iface)
+				module.exports = iface;
+			`, CONFIG)).toMatchInlineSnapshot(`
+				"const _a = () => {};
+				const iface = {
+				  a: _a
+				};
+				_a();
+				console.log(iface);
+				export { _a as a };"
+			`);
+
+			expect(babel(dent`
+				const iface = {
+				  a() {}
+				};
+				iface.a();
+				console.log(iface)
+				module.exports = iface;
+			`, CONFIG)).toMatchInlineSnapshot(`
+				"function _a() {}
+				const iface = {
+				  a: _a
+				};
+				_a();
+				console.log(iface);
+				export { _a as a };"
 			`);
 		});
 	});

@@ -155,14 +155,15 @@ export default ({ types: t, parse }) => {
 							}
 						}
 						// remove unreferenced exports object aliases (eg: const lib = exports)
-						else if (t.isVariableDeclarator(p.parentPath) && !p.parentPath.get('id').isReferencedIdentifier()) {
+						// TODO: instead of scope.crawl(), iterate over binding references and look for unremoved ones
+						else if (t.isVariableDeclarator(p.parent) && (path.scope.crawl(), true) && !p.scope.getBinding(p.parent.id.name).referenced) {
 							p.parentPath.remove();
 						}
 						else if (t.isMemberExpression(p) && isModuleExports(p) && locals.get('default')) {
 							p.replaceWith(t.clone(locals.get('default')));
 						}
 						else if (!replaced.has(p)) {
-							if (p.parentKey !== 'left') {
+							if (p.parentKey !== 'left' && !t.isVariableDeclarator(p.parentPath)) {
 								p.replaceWith(t.nullLiteral());
 							}
 						}
@@ -204,14 +205,14 @@ export default ({ types: t, parse }) => {
 									if (!t.isIdentifier(v)) {
 										const ident = path.scope.generateUidIdentifierBasedOnNode(prop.node);
 										if (t.isObjectMethod(prop.node)) {
-											path.insertBefore(t.functionDeclaration(ident, prop.node.params, prop.node.body));
-											v.replaceWith(ident);
+											right.getStatementParent().insertBefore(t.functionDeclaration(ident, prop.node.params, prop.node.body));
+											prop.replaceWith(t.objectProperty(t.clone(prop.node.key), t.clone(ident)));
 										}
 										else {
-											path.insertBefore(t.variableDeclaration('const', [
+											right.getStatementParent().insertBefore(t.variableDeclaration('const', [
 												t.variableDeclarator(ident, t.clone(v.node))
 											]));
-											v.replaceWith(ident);
+											v.replaceWith(t.clone(ident));
 										}
 									}
 									let val = prop.node.value;
@@ -220,6 +221,10 @@ export default ({ types: t, parse }) => {
 									exports.push(t.exportSpecifier(val, prop.node.key));
 								}
 								path.parentPath.remove();
+
+								// TODO: verify this. Currently export object aliases are not properly culled/retained.
+								state.get('toReplace').push(right);
+
 								const binding = right.scope.getBinding(path.node.right.name);
 								if (binding) {
 									for (const ref of binding.referencePaths) {
