@@ -86,6 +86,17 @@ export default ({ types: t, parse }) => {
 		return false;
 	}
 
+	function isInProgramBody(path) {
+		let parent;
+		try {
+			parent = path.getStatementParent();
+		}
+		catch (e) {}
+		// @TODO: if there's no statement parent, doesn't that imply it's in the program body?
+		return !parent || parent.parent && t.isProgram(parent.parent);
+		// return parent && parent.parent && t.isProgram(parent.parent);
+	}
+
 	return {
 		name: 'transform-cjs-to-esm',
 		visitor: {
@@ -173,7 +184,7 @@ export default ({ types: t, parse }) => {
 			AssignmentExpression: {
 				exit(path, state) {
 					// ignore assignments that aren't in the program body
-					if (state.get('error') || !t.isProgram(path.getStatementParent().parent)) {
+					if (state.get('error') || !isInProgramBody(path)) {
 						return;
 					}
 
