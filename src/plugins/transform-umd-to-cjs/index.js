@@ -12,11 +12,19 @@ export default ({ types: t }) => ({
 				if (expressions.length !== 1) return;
 
 				// Make sure it's of the form: (function(){})(this?, function(){})
-				const expr = expressions[0];
-				if (!t.isExpressionStatement(expr) || !t.isCallExpression(expr.get('expression'))) return;
+				let expr = expressions[0];
+				if (!t.isExpressionStatement(expr)) return;
+				expr = expr.get('expression');
+
+				// !function(){}()
+				if (t.isUnaryExpression(expr) && expr.node.operator === '!') {
+					expr = expr.get('argument');
+				}
+
+				if (!t.isCallExpression(expr)) return;
 
 				// Our module factory is the only function argument:
-				const umd = expressions[0].get('expression');
+				const umd = expr;
 				const factoryArgPosition = umd.get('arguments').findIndex(t.isFunctionExpression);
 
 				// The bootstrap is the function containing our UMD implementation
