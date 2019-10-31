@@ -39,7 +39,7 @@ export default ({ types: t }) => ({
 						// This is an expression, but we don't know what.
 						//   Example: [].concat(foo ? {} : [])
 						if (!t.isIdentifier(p)) {
-							console.log('Unknown static value: ', p.node);
+							// console.log('Unknown static value: ', p.node);
 							return;
 						}
 
