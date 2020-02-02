@@ -62,6 +62,7 @@ export default ({ types: t }) => ({
 					const spread = t.isArrayExpression(arr) ? t.clone(arr.node) : t.arrayExpression([arr.node]);
 					spread.elements.push(...items);
 					path.replaceWith(spread);
+					path.skip();
 				}
 			}
 		}
