@@ -1,0 +1,5 @@
+{
+  "plugins": [
+    "../../../../src/plugins/transform-remove-polyfills"
+  ]
+}

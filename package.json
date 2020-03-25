@@ -51,17 +51,25 @@
     "extends": "developit",
     "rules": {
       "no-console": 0,
-      "new-cap": 0
+      "new-cap": 0,
+      "no-unused-vars": [
+        1,
+        {
+          "trailing": true
+        }
+      ]
     }
   },
   "eslintIgnore": [
-    "test/fixtures/**/*"
+    "test/fixtures/**/*",
+    "test/fixtures.disabled/**/*"
   ],
   "author": "Jason Miller <jason@developit.ca>",
   "license": "Apache 2.0",
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.5",
+    "@babel/helper-plugin-test-runner": "^7.8.3",
     "@babel/plugin-transform-modules-commonjs": "^7.5.0",
     "@babel/preset-env": "^7.4.5",
     "babel-plugin-add-module-exports": "^1.0.2",
