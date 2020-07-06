@@ -5,11 +5,10 @@
 export default ({ types: t, parse }) => {
 	function prependProgramBody(program, node) {
 		const imports = program.get('body').filter(p => t.isImportDeclaration(p.node));
-		const last = imports[imports.length-1];
+		const last = imports[imports.length - 1];
 		if (last) {
 			last.insertAfter(node);
-		}
-		else {
+		} else {
 			program.unshiftContainer('body', node);
 		}
 	}
@@ -24,7 +23,7 @@ export default ({ types: t, parse }) => {
 
 		// Ignore `foo.exports`:
 		const isMember = t.isMemberExpression(resolved.parentPath);
-		if (isMember && path.key=='property') return false;
+		if (isMember && path.key == 'property') return false;
 
 		return t.isIdentifier(resolved) && resolved.node.name === 'exports';
 	}
@@ -47,10 +46,9 @@ export default ({ types: t, parse }) => {
 
 	function isPropertyAccess(path) {
 		const parent = path.parentPath;
-		if (path.key=='object' && t.isMemberExpression(parent)) {
+		if (path.key == 'object' && t.isMemberExpression(parent)) {
 			// De-opt to namespace import (commonjs compat) for imported[foo]
 			if (parent.node.computed) {
-
 				// Exception: if we can statically determine this is a property access, replace it with one:
 				const val = parent.get('property').evaluate();
 				if (val && val.confident && t.isValidIdentifier(val.value)) {
@@ -90,10 +88,9 @@ export default ({ types: t, parse }) => {
 		let parent;
 		try {
 			parent = path.getStatementParent();
-		}
-		catch (e) {}
+		} catch (e) {}
 		// @TODO: if there's no statement parent, doesn't that imply it's in the program body?
-		return !parent || parent.parent && t.isProgram(parent.parent);
+		return !parent || (parent.parent && t.isProgram(parent.parent));
 		// return parent && parent.parent && t.isProgram(parent.parent);
 	}
 
@@ -145,10 +142,7 @@ export default ({ types: t, parse }) => {
 
 					const defaultExport = state.get('defaultExport');
 					if (defaultExport) {
-						path.pushContainer(
-							'body',
-							t.exportDefaultDeclaration(defaultExport)
-						);
+						path.pushContainer('body', t.exportDefaultDeclaration(defaultExport));
 					}
 
 					const locals = state.get('locals');
@@ -159,22 +153,23 @@ export default ({ types: t, parse }) => {
 							const local = locals.get(id);
 							if (local) {
 								p.parentPath.replaceWith(t.clone(local));
-							}
-							else {
+							} else {
 								console.warn(p.buildCodeFrameError('Unable to remove usage of module.exports cleanly').message);
 								p.replaceWith(t.objectExpression([]));
 							}
 						}
 						// remove unreferenced exports object aliases (eg: const lib = exports)
 						// TODO: instead of scope.crawl(), iterate over binding references and look for unremoved ones
-						else if (t.isVariableDeclarator(p.parent) && (path.scope.crawl(), true) && !p.scope.getBinding(p.parent.id.name).referenced) {
+						else if (
+							t.isVariableDeclarator(p.parent) &&
+							(path.scope.crawl(), true) &&
+							!p.scope.getBinding(p.parent.id.name).referenced
+						) {
 							p.parentPath.remove();
-						}
-						else if (t.isMemberExpression(p) && isModuleExports(p) && locals.get('default')) {
+						} else if (t.isMemberExpression(p) && isModuleExports(p) && locals.get('default')) {
 							p.replaceWith(t.clone(locals.get('default')));
-						}
-						else if (!replaced.has(p)) {
-							if (p.parentKey !== 'left' && !t.isVariableDeclarator(p.parentPath)) {
+						} else if (!replaced.has(p)) {
+							if (p.parentKey !== 'left' && p.parentKey !== 'key' && !t.isVariableDeclarator(p.parentPath)) {
 								p.replaceWith(t.nullLiteral());
 							}
 						}
@@ -195,13 +190,14 @@ export default ({ types: t, parse }) => {
 					if (t.isMemberExpression(subj) || t.isIdentifier(subj)) {
 						const obj = subj.get('object');
 
-						let id, prop, isDefault = false;
+						let id,
+							prop,
+							isDefault = false;
 						if (isExports(subj) || isModuleExports(subj)) {
 							isDefault = true;
 							id = '_default';
 							replaced.add(subj);
-						}
-						else if (isExports(obj) || isModuleExports(obj)) {
+						} else if (isExports(obj) || isModuleExports(obj)) {
 							//replaced.add(obj);
 							prop = subj.get('property');
 							id = t.isIdentifier(prop) ? prop.node.name : t.isStringLiteral(prop) ? prop.node.value : null;
@@ -216,13 +212,14 @@ export default ({ types: t, parse }) => {
 									if (!t.isIdentifier(v)) {
 										const ident = path.scope.generateUidIdentifierBasedOnNode(prop.node);
 										if (t.isObjectMethod(prop.node)) {
-											right.getStatementParent().insertBefore(t.functionDeclaration(ident, prop.node.params, prop.node.body));
+											right
+												.getStatementParent()
+												.insertBefore(t.functionDeclaration(ident, prop.node.params, prop.node.body));
 											prop.replaceWith(t.objectProperty(t.clone(prop.node.key), t.clone(ident)));
-										}
-										else {
-											right.getStatementParent().insertBefore(t.variableDeclaration('const', [
-												t.variableDeclarator(ident, t.clone(v.node))
-											]));
+										} else {
+											right
+												.getStatementParent()
+												.insertBefore(t.variableDeclaration('const', [t.variableDeclarator(ident, t.clone(v.node))]));
 											v.replaceWith(t.clone(ident));
 										}
 									}
@@ -248,26 +245,24 @@ export default ({ types: t, parse }) => {
 							}
 
 							if (!id.match(/^[a-z_$][a-z0-9_$]*$/gi)) {
-								console.error('Cannot transform CJS: invalid export name "'+id+'"');
+								console.error('Cannot transform CJS: invalid export name "' + id + '"');
 								state.set('error', true);
 							}
 
 							const binding = path.scope.getBinding(id);
 							const isReserved = !t.isValidIdentifier(id);
-							const local = isDefault || binding || isReserved ? path.scope.generateUidIdentifier(id) : t.identifier(id);
+							const local =
+								isDefault || binding || isReserved ? path.scope.generateUidIdentifier(id) : t.identifier(id);
 							locals.set(id, local);
 							if (!isDefault && !binding && !isReserved && path.parentPath.isStatement()) {
 								// the variable is free and this is a statement.
 								// we can declare and export inline
 								const exported = t.exportNamedDeclaration(
-									t.variableDeclaration('const', [
-										t.variableDeclarator(t.identifier(id), t.clone(right.node))
-									]),
+									t.variableDeclaration('const', [t.variableDeclarator(t.identifier(id), t.clone(right.node))]),
 									[]
 								);
 								path.parentPath.replaceWith(exported);
-							}
-							else {
+							} else {
 								// need to explicitly export the aliased identifier
 								path.scope.push({ id: local });
 								if (isDefault) {
@@ -275,8 +270,7 @@ export default ({ types: t, parse }) => {
 									//path.getStatementParent().insertAfter(
 									//  t.exportDefaultDeclaration(local)
 									//);
-								}
-								else {
+								} else {
 									exports.push(t.exportSpecifier(local, t.identifier(id)));
 								}
 								subj.replaceWith(local);
@@ -296,7 +290,7 @@ export default ({ types: t, parse }) => {
 				let likelyDefaultImport = false;
 				let replaced = false;
 				let addImport = true;
-				if (t.isIdentifier(callee) && callee.name==='require') {
+				if (t.isIdentifier(callee) && callee.name === 'require') {
 					if (!t.isStringLiteral(path.node.arguments[0])) {
 						console.warn('Dynamic require() usage.');
 						return;
@@ -312,14 +306,17 @@ export default ({ types: t, parse }) => {
 							path.parentPath.replaceWith(local);
 							replaced = true;
 						}
-					}
-					else if (t.isAssignmentExpression(path.parent) || t.isVariableDeclarator(path.parent)) {
+					} else if (t.isAssignmentExpression(path.parent) || t.isVariableDeclarator(path.parent)) {
 						if (path.key !== 'right' && path.key !== 'init') {
 							console.warn('Deoptimizing: require() in left-hand side expression');
 							return;
 						}
 						const pattern = path.parentPath.get(path.key === 'init' ? 'id' : 'left');
-						if (t.isIdentifier(pattern) && t.isProgram(pattern.scope.block) && !path.scope.checkBlockScopedCollisions(pattern.node)) {
+						if (
+							t.isIdentifier(pattern) &&
+							t.isProgram(pattern.scope.block) &&
+							!path.scope.checkBlockScopedCollisions(pattern.node)
+						) {
 							// top-level assignment: hoist to an import directly
 							local = locals.has(source) ? t.identifier(locals.get(source)) : pattern.node;
 
@@ -339,13 +336,10 @@ export default ({ types: t, parse }) => {
 										if (!localBinding) {
 											localBinding = path.scope.generateUidIdentifierBasedOnNode(prop);
 											idents.set(id, localBinding);
-											specifiers.push(
-												t.importSpecifier(localBinding, t.identifier(id))
-											);
+											specifiers.push(t.importSpecifier(localBinding, t.identifier(id)));
 										}
 										p.parentPath.replaceWith(localBinding);
-									}
-									else {
+									} else {
 										// const { foo } = ns
 										const pattern = p.parentPath.get('id');
 										const locals = [];
@@ -356,9 +350,7 @@ export default ({ types: t, parse }) => {
 											if (!localBinding) {
 												localBinding = path.scope.generateUidIdentifierBasedOnNode(value);
 												idents.set(key.name, localBinding);
-												specifiers.push(
-													t.importSpecifier(t.clone(localBinding), t.clone(key))
-												);
+												specifiers.push(t.importSpecifier(t.clone(localBinding), t.clone(key)));
 											}
 											locals.push(t.variableDeclarator(t.clone(value), t.clone(localBinding)));
 										}
@@ -367,8 +359,7 @@ export default ({ types: t, parse }) => {
 								}
 
 								replaced = true;
-							}
-							else {
+							} else {
 								// the local identifier is referenced dynamicall or reassigned.
 								// this means it's extremely unlikely to be a namespace import,
 								// so we'll compile it to a commonjs interop default.
@@ -378,8 +369,7 @@ export default ({ types: t, parse }) => {
 							locals.set(source, pattern.node.name);
 							path.parentPath.remove();
 							replaced = true;
-						}
-						else {
+						} else {
 							const existingLocal = locals.has(source) && t.identifier(locals.get(source));
 							if (existingLocal) {
 								addImport = false;
@@ -388,7 +378,8 @@ export default ({ types: t, parse }) => {
 									path.parentPath.remove();
 								}
 							}
-							local = existingLocal || path.scope.generateUidIdentifierBasedOnNode(pattern.node || path.node.arguments[0]);
+							local =
+								existingLocal || path.scope.generateUidIdentifierBasedOnNode(pattern.node || path.node.arguments[0]);
 						}
 
 						if (t.isObjectPattern(pattern)) {
@@ -397,22 +388,16 @@ export default ({ types: t, parse }) => {
 								const { key, value } = prop.node;
 
 								if (t.isProgram(prop.scope.block) && !prop.scope.checkBlockScopedCollisions(pattern.node)) {
-									specifiers.push(
-										t.importSpecifier(t.clone(value), t.clone(key))
-									);
-								}
-								else {
+									specifiers.push(t.importSpecifier(t.clone(value), t.clone(key)));
+								} else {
 									const intermediary = prop.scope.generateUidIdentifierBasedOnNode(value);
-									specifiers.push(
-										t.importSpecifier(intermediary, t.clone(key))
-									);
+									specifiers.push(t.importSpecifier(intermediary, t.clone(key)));
 									locals.push(t.variableDeclarator(t.clone(value), intermediary));
 								}
 							}
 							if (locals.length) {
 								path.parentPath.parentPath.replaceWith(t.variableDeclaration('let', locals));
-							}
-							else {
+							} else {
 								path.parentPath.parentPath.remove();
 							}
 							local = t.variableDeclaration('let', locals);
@@ -428,16 +413,12 @@ export default ({ types: t, parse }) => {
 					if (!specifiers.length) {
 						if (likelyDefaultImport) {
 							specifiers.push(t.importDefaultSpecifier(local));
-						}
-						else {
+						} else {
 							specifiers.push(t.importNamespaceSpecifier(local));
 						}
 					}
 					if (addImport) {
-						const importDecl = t.importDeclaration(
-							specifiers,
-							t.stringLiteral(source)
-						);
+						const importDecl = t.importDeclaration(specifiers, t.stringLiteral(source));
 						imports.push(importDecl);
 					}
 					if (!replaced) {

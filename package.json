@@ -45,10 +45,16 @@
   },
   "prettier": {
     "singleQuote": true,
+    "trailingComma": "none",
+    "arrowParens": "avoid",
+    "useTabs": true,
     "printWidth": 120
   },
   "eslintConfig": {
-    "extends": "developit",
+    "extends": [
+      "developit",
+      "prettier"
+    ],
     "rules": {
       "no-console": 0,
       "new-cap": 0
@@ -64,10 +70,12 @@
     "@babel/core": "^7.4.5",
     "@babel/plugin-transform-modules-commonjs": "^7.5.0",
     "@babel/preset-env": "^7.4.5",
+    "@types/jest": "^26.0.3",
     "babel-plugin-add-module-exports": "^1.0.2",
     "concurrently": "^4.1.0",
     "eslint": "^5.16.0",
     "eslint-config-developit": "^1.1.1",
+    "eslint-config-prettier": "^6.11.0",
     "jest": "^24.8.0",
     "prettier": "^1.18.2"
   }

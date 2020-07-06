@@ -27,6 +27,10 @@ export default ({ types: t }) => ({
 				const umd = expr;
 				const factoryArgPosition = umd.get('arguments').findIndex(t.isFunctionExpression);
 
+				if (factoryArgPosition === -1) {
+					return;
+				}
+
 				// The bootstrap is the function containing our UMD implementation
 				const bootstrap = umd.get('callee');
 				if (!t.isFunctionExpression(bootstrap)) return;

@@ -13,9 +13,17 @@ export default function babelPresetModules(_, options = {}) {
 	return {
 		plugins: [
 			path.resolve(__dirname, './plugins/transform-umd-to-cjs'),
-			path.resolve(__dirname, './plugins/transform-cjs-to-esm'),
+			// Currently disabled, causes problems with non-CJS files:
+			// path.resolve(__dirname, './plugins/transform-cjs-to-esm'),
 			[path.resolve(__dirname, './plugins/transform-arguments'), { loose }],
+			path.resolve(__dirname, './plugins/transform-destructuring'),
+			path.resolve(__dirname, './plugins/transform-methods'),
+			path.resolve(__dirname, './plugins/transform-mangle-identifiers'),
+			path.resolve(__dirname, './plugins/transform-iife-arrows'),
+			path.resolve(__dirname, './plugins/transform-implicit-scope'),
 			path.resolve(__dirname, './plugins/transform-array-spread'),
+			path.resolve(__dirname, './plugins/transform-optimize-webpack'),
+			path.resolve(__dirname, './plugins/transform-remove-polyfills'),
 			module && path.resolve(__dirname, './plugins/transform-implicit-strict')
 		].filter(Boolean)
 	};

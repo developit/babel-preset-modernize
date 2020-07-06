@@ -27,8 +27,8 @@ export default ({ types: t }) => {
 		const ident = isUndefined(node.left)
 			? getPath(path, 'right')
 			: isUndefined(node.right)
-				? getPath(path, 'left')
-				: null;
+			? getPath(path, 'left')
+			: null;
 		return ident || false;
 	}
 
@@ -47,7 +47,11 @@ export default ({ types: t }) => {
 		if (!func) return;
 
 		const checked = isUndefinedCheck(condition, '==');
-		if (checked && t.isAssignmentExpression(assignment)) {
+		// if (checked && !t.isAssignmentExpression(assignment)) {
+		// 	console.log(assignment.node);
+		// }
+		// t === undefined || (t = "foo")
+		if (checked && t.isAssignmentExpression(assignment) && t.isNodesEquivalent(checked.node, assignment.node.left)) {
 			const binding = path.scope.getBinding(getNode(checked).name);
 			if (binding && binding.kind === 'param') {
 				const pattern = t.assignmentPattern(t.clone(binding.identifier), assignment.node.right);
