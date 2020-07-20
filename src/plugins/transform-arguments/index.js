@@ -1,10 +1,13 @@
+/** @typedef {import('@babel/core')} babel */
+
 /**
  * Transform conditional and collected argument values to default and rest params.
  *
- * TODO: default destructured parameters - ({ x = 1 }) => x
+ * TODO: finish testing default destructured parameters - ({ x = 1 }) => x
+ * @param {babel} api
+ * @returns {babel.PluginObj}
  */
-
-export default ({ types: t }) => {
+export default function transformArguments({ types: t }) {
 	const UNDEFINED = t.identifier('undefined');
 	const ARGUMENTS = t.identifier('arguments');
 
@@ -12,16 +15,24 @@ export default ({ types: t }) => {
 
 	function isUndefined(path) {
 		const node = getNode(path);
-		return (
-			(t.isIdentifier(node) && t.shallowEqual(node, UNDEFINED)) ||
-			(t.isUnaryExpression(node) && t.isNumericLiteral(node.argument, t.numericLiteral(0)))
-		);
+
+		if (t.isIdentifier(node) && t.isIdentifier(node, UNDEFINED)) return true;
+		// if (t.isIdentifier(node) && t.shallowEqual(node, UNDEFINED)) return true;
+
+		if (t.isUnaryExpression(node) && node.operator === 'void') return true;
+
+		return false;
 	}
 
 	function getPath(pathOrNode, key) {
 		return 'node' in pathOrNode ? pathOrNode.get(key) : pathOrNode[key];
 	}
 
+	/**
+	 * @template {babel.NodePath} T
+	 * @param {T} path
+	 * @returns {T | false}
+	 */
 	function isUndefinedCheck(path, operator = '===') {
 		const node = getNode(path);
 		operator = operator.slice(0, 2);
@@ -63,6 +74,31 @@ export default ({ types: t }) => {
 		}
 	}
 
+	/**
+	 * Variable declarations that shadow defaulted destructured parameters:
+	 *   ({ x }) => { var _x = x === void 0 ? 42 : x; return _x; }
+	 * @TODO: test logic inversions for the conditional assignment
+	 * @param {babel.NodePath} path
+	 * @param {babel.NodePath} test
+	 */
+	function shadowedDefaultParam(path, test) {
+		const checked = isUndefinedCheck(test, '==');
+		if (!checked) return;
+
+		const name = getNode(checked).name;
+		const binding = checked.scope.getBinding(name);
+		if (!binding || binding.kind !== 'param') return;
+
+		let bindingPath = binding.path;
+		if (t.isObjectPattern(bindingPath)) {
+			bindingPath = bindingPath.getBindingIdentifierPaths()[name];
+		}
+		const pattern = t.assignmentPattern(t.clone(path.node.id), path.node.init.consequent);
+		bindingPath.replaceWith(pattern);
+		path.remove();
+		return true;
+	}
+
 	return {
 		name: 'transform-arguments',
 		// pre() {
@@ -78,8 +114,13 @@ export default ({ types: t }) => {
 				const func = path.getFunctionParent();
 				if (!func) return;
 
-				if (path.node.operator !== '=' || !t.isLogicalExpression(path.node.right) || path.node.right.operator !== '||')
+				if (
+					path.node.operator !== '=' ||
+					!t.isLogicalExpression(path.node.right) ||
+					path.node.right.operator !== '||'
+				) {
 					return;
+				}
 
 				if (
 					t.isIdentifier(path.node.left) &&
@@ -109,6 +150,11 @@ export default ({ types: t }) => {
 				let expr = test;
 				if (t.isLogicalExpression(test)) {
 					expr = isUndefinedCheck(test.get('left'), '!=') || isUndefinedCheck(test.get('right'), '!=');
+				}
+
+				// ({ x }) => { var _x = x === void 0 ? 42 : x; return _x; }
+				if (shadowedDefaultParam(path, test)) {
+					return;
 				}
 
 				// Check for `arguments[1]`
@@ -253,4 +299,4 @@ export default ({ types: t }) => {
 			*/
 		}
 	};
-};
+}
