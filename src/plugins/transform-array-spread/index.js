@@ -1,7 +1,9 @@
+/** @typedef {import('@babel/core')} babel */
+
 /**
  * Turn [a, b].concat(1, <Array> c) into [a, b, 1, ...c]
+ * @param {babel} api
  */
-
 export default ({ types: t }) => ({
 	name: 'transform-array-spread',
 	visitor: {

@@ -1,5 +1,6 @@
 /**
  * Convert all identifiers to the shortest available
+ * NOTE: this breaks in too many cases to be usable yet.
  */
 
 export default ({ types: t }) => {
@@ -65,9 +66,14 @@ export default ({ types: t }) => {
 				}
 
 				if (!binding.referenced) {
-					if (t.isVariableDeclarator(path.parent)) {
+					if (
+						t.isVariableDeclarator(path.parent) ||
+						t.isImportSpecifier(path.parent) ||
+						t.isImportDefaultSpecifier(path.parent)
+					) {
 						path = path.parentPath;
 					}
+					// TODO: it would be nice to have the option to elide unused imports.
 					path.remove();
 					return;
 				}
