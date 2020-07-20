@@ -33,6 +33,10 @@ export default function transformTemplateLiterals({ types: t }) {
 				let p = path;
 				while ((p = p.parentPath && p.parentPath.parentPath)) {
 					if (isStringConcat(p)) {
+						// ignore wrapping [].concat(..)
+						const obj = p.get('callee.object');
+						if (obj !== rootPath && !t.isStringLiteral(obj)) break;
+
 						concats.push(p.get('arguments'));
 						rootPath = p;
 					}
@@ -45,9 +49,10 @@ export default function transformTemplateLiterals({ types: t }) {
 						const node = args[i].node;
 						if (i % 2) {
 							if (!t.isStringLiteral(node)) {
-								console.log('this is not a template literal');
+								// console.warn(`Template string malformed: `, rootPath.getSource());
 								return;
 							}
+
 							const tail = isLast && i === args.length - 1;
 							tpls.push(t.templateElement({ raw: esc(node.value) }, tail));
 						} else if (t.isExpression(node)) {
