@@ -1,5 +1,7 @@
 /**
  * Transform conditional and collected argument values to default and rest params.
+ *
+ * TODO: default destructured parameters - ({ x = 1 }) => x
  */
 
 export default ({ types: t }) => {
@@ -117,6 +119,22 @@ export default ({ types: t }) => {
 				) {
 					// install the optional parameter pattern
 					const index = expr.node.property.value;
+					const arg = path.get('id').node;
+					func.node.params[index] = t.assignmentPattern(t.clone(arg), path.get('init.alternate').node);
+					path.remove();
+				}
+				// Check for `arguments.length > 2` or `arguments.length >= 2`
+				else if (
+					t.isBinaryExpression(expr) &&
+					t.isMemberExpression(expr.get('left')) &&
+					t.isIdentifier(expr.node.left.object, ARGUMENTS) &&
+					t.isIdentifier(expr.node.left.property, { name: 'length' }) &&
+					t.isNumericLiteral(expr.node.right) &&
+					expr.node.operator[0] === '>'
+				) {
+					// install the optional parameter pattern
+					let index = expr.node.right.value;
+					if (expr.node.operator === '>=') index += 1;
 					const arg = path.get('id').node;
 					func.node.params[index] = t.assignmentPattern(t.clone(arg), path.get('init.alternate').node);
 					path.remove();
