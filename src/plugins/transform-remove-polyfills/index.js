@@ -1,3 +1,5 @@
+/** @typedef {import('@babel/core')} babel */
+
 /**
  * Remove polyfills
  */
@@ -11,6 +13,8 @@ const POLYFILLS = [
 	'Object.setPrototypeOf',
 	'Object.getPrototypeOf',
 	'Object.getOwnPropertyDescriptor',
+	'Object.getOwnPropertyDescriptors',
+	'Object.getOwnPropertySymbols',
 	'Object.keys',
 	'Array.from',
 	'Symbol',
@@ -55,7 +59,11 @@ if (IS_BROWSER) {
 	);
 }
 
-export default ({ types: t, template }) => {
+/**
+ * @param {babel} api
+ * @returns {babel.PluginObj}
+ */
+export default function transformRemovePolyfills({ types: t, template }) {
 	// window.t = t;
 
 	// function isNamedIdentifier(path, name) {
@@ -234,7 +242,8 @@ export default ({ types: t, template }) => {
 							let truthy = other.value !== 'undefined';
 							if (negate) truthy = !truthy;
 							const replacement = t.booleanLiteral(truthy);
-							parent.replaceWith(replacement);
+							// replace the comparison with its constant value:
+							parent.parentPath.replaceWith(replacement);
 							return cascadeReplacement(parent.parentPath, replacement);
 						}
 					}
@@ -729,4 +738,4 @@ export default ({ types: t, template }) => {
 			}
 		})
 	};
-};
+}
