@@ -18,7 +18,8 @@ export default function babelPresetModules(_, options = {}) {
 			[path.resolve(__dirname, './plugins/transform-arguments'), { loose }],
 			path.resolve(__dirname, './plugins/transform-destructuring'),
 			path.resolve(__dirname, './plugins/transform-methods'),
-			path.resolve(__dirname, './plugins/transform-mangle-identifiers'),
+			// too broken:
+			// path.resolve(__dirname, './plugins/transform-mangle-identifiers'),
 			path.resolve(__dirname, './plugins/transform-iife-arrows'),
 			path.resolve(__dirname, './plugins/transform-implicit-scope'),
 			path.resolve(__dirname, './plugins/transform-array-spread'),
