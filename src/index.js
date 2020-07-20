@@ -23,6 +23,7 @@ export default function babelPresetModules(_, options = {}) {
 			path.resolve(__dirname, './plugins/transform-iife-arrows'),
 			path.resolve(__dirname, './plugins/transform-implicit-scope'),
 			path.resolve(__dirname, './plugins/transform-array-spread'),
+			path.resolve(__dirname, './plugins/transform-template-literals'),
 			path.resolve(__dirname, './plugins/transform-optimize-webpack'),
 			path.resolve(__dirname, './plugins/transform-remove-polyfills'),
 			module && path.resolve(__dirname, './plugins/transform-implicit-strict')
