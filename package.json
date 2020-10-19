@@ -1,82 +1,91 @@
 {
-  "name": "babel-preset-optimize",
-  "version": "0.0.1",
-  "description": "nothing to see here",
-  "main": "dist/index.js",
-  "scripts": {
-    "start": "concurrently -r 'npm:watch:* -s'",
-    "build": "babel src -d dist --ignore '**/*.test.js'",
-    "test": "eslint src test && jest --colors",
-    "watch:test": "jest --watch",
-    "watch:build": "npm run -s build -- -w"
-  },
-  "keywords": [
-    "babel",
-    "commonjs",
-    "umd",
-    "dependencies"
-  ],
-  "files": [
-    "src",
-    "dist"
-  ],
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "loose": true,
-          "targets": {
-            "node": 8
-          }
-        }
-      ]
-    ],
-    "plugins": [
-      "babel-plugin-add-module-exports"
-    ]
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "roots": [
-      "src",
-      "test"
-    ]
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "none",
-    "arrowParens": "avoid",
-    "useTabs": true,
-    "printWidth": 120
-  },
-  "eslintConfig": {
-    "extends": [
-      "developit",
-      "prettier"
-    ],
-    "rules": {
-      "no-console": 0,
-      "new-cap": 0
-    }
-  },
-  "eslintIgnore": [
-    "test/fixtures/**/*"
-  ],
-  "author": "Jason Miller <jason@developit.ca>",
-  "license": "Apache 2.0",
-  "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.5",
-    "@babel/plugin-transform-modules-commonjs": "^7.5.0",
-    "@babel/preset-env": "^7.4.5",
-    "@types/jest": "^26.0.3",
-    "babel-plugin-add-module-exports": "^1.0.2",
-    "concurrently": "^4.1.0",
-    "eslint": "^5.16.0",
-    "eslint-config-developit": "^1.1.1",
-    "eslint-config-prettier": "^6.11.0",
-    "jest": "^24.8.0",
-    "prettier": "^1.18.2"
-  }
+	"name": "babel-preset-optimize",
+	"version": "0.0.1",
+	"description": "nothing to see here",
+	"main": "dist/index.js",
+	"scripts": {
+		"start": "concurrently -r 'npm:watch:* -s'",
+		"build": "babel src -d dist --ignore '**/*.test.js'",
+		"build:standalone": "BABEL_ENV=standalone microbundle --no-sourcemap -f es src/index.js -o dist/standalone.js",
+		"test": "eslint src test && jest --colors",
+		"watch:test": "jest --watch",
+		"watch:build": "npm run -s build -- -w"
+	},
+	"keywords": [
+		"babel",
+		"commonjs",
+		"umd",
+		"dependencies"
+	],
+	"files": [
+		"src",
+		"dist"
+	],
+	"babel": {
+		"presets": [
+			[
+				"@babel/preset-env",
+				{
+					"loose": true,
+					"targets": {
+						"node": 8
+					}
+				}
+			]
+		],
+		"plugins": [
+			"babel-plugin-add-module-exports"
+		],
+		"env": {
+			"standalone": {
+				"plugins": [
+					"./scripts/babel-plugin-inline-resolve.js"
+				]
+			}
+		}
+	},
+	"jest": {
+		"testEnvironment": "node",
+		"roots": [
+			"src",
+			"test"
+		]
+	},
+	"prettier": {
+		"singleQuote": true,
+		"trailingComma": "none",
+		"arrowParens": "avoid",
+		"useTabs": true,
+		"printWidth": 120
+	},
+	"eslintConfig": {
+		"extends": [
+			"developit",
+			"prettier"
+		],
+		"rules": {
+			"no-console": 0,
+			"new-cap": 0
+		}
+	},
+	"eslintIgnore": [
+		"test/fixtures/**/*"
+	],
+	"author": "Jason Miller <jason@developit.ca>",
+	"license": "Apache 2.0",
+	"devDependencies": {
+		"@babel/cli": "^7.4.4",
+		"@babel/core": "^7.4.5",
+		"@babel/plugin-transform-modules-commonjs": "^7.5.0",
+		"@babel/preset-env": "^7.4.5",
+		"@types/jest": "^26.0.3",
+		"babel-plugin-add-module-exports": "^1.0.2",
+		"concurrently": "^4.1.0",
+		"eslint": "^5.16.0",
+		"eslint-config-developit": "^1.1.1",
+		"eslint-config-prettier": "^6.11.0",
+		"jest": "^24.8.0",
+		"microbundle": "^0.12.4",
+		"prettier": "^1.18.2"
+	}
 }
