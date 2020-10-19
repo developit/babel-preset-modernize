@@ -594,11 +594,18 @@ export default function({ types: t, template }) {
 
 				// if we converted a function declaration to expression to hoist, undo that now.
 				let finalId = left.node;
+
+				if (!t.isIdentifier(finalId)) {
+					console.log(finalId);
+				}
+
+				const renamed = {};
 				if (functionDecl) {
 					hoisted.parentPath.scope.crawl();
 					const binding = hoisted.parentPath.scope.bindings[hoisted.parent.id.name];
 					//console.log(hoisted.parent.id.name, binding, hoisted.parentPath.scope.checkBlockScopedCollisions(binding));
 					if (!hoisted.parentPath.scope.checkBlockScopedCollisions(binding)) {
+						renamed[hoisted.parent.id.name] = functionDecl.id.name;
 						hoisted.parentPath.scope.rename(hoisted.parent.id.name, functionDecl.id.name);
 						// console.log(binding);
 						// binding.referencePaths.forEach(p => {
@@ -620,8 +627,18 @@ export default function({ types: t, template }) {
 
 				const ident = hoisted.parent.id;
 				for (let i in bindings) {
-					const binding = resolved.scope.bindings[i];
-					//console.log(i, binding);
+					// const binding = resolved.scope.bindings[i];
+					const binding = resolved.scope.getBinding(i);
+					// if (!resolved.scope.bindings[i]) {
+					// 	console.log(
+					// 		`Binding ${i} missing:`,
+					// 		bindings,
+					// 		resolved.scope.bindings,
+					// 		bindings[i].scope.bindings[i],
+					// 		resolved.scope.getBinding(i),
+					// 		renamed
+					// 	);
+					// }
 					binding.referencePaths.forEach(p => {
 						binding.dereference();
 						p.replaceWith(t.clone(ident));

@@ -17,6 +17,7 @@ export default function babelPresetModules(_, options = {}) {
 			// path.resolve(__dirname, './plugins/transform-cjs-to-esm'),
 			[path.resolve(__dirname, './plugins/transform-arguments'), { loose }],
 			path.resolve(__dirname, './plugins/transform-destructuring'),
+			path.resolve(__dirname, './plugins/transform-classes'),
 			path.resolve(__dirname, './plugins/transform-methods'),
 			// too broken:
 			// path.resolve(__dirname, './plugins/transform-mangle-identifiers'),
