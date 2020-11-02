@@ -8,7 +8,9 @@ export default ({ types: t }) => ({
 		ObjectProperty(path) {
 			const value = path.get('value');
 
-			let fn = value.resolve();
+			// Moving the function from another location/scope is unsafe:
+			// let fn = value.resolve();
+			let fn = value;
 
 			// allow arrows, since they're cheaper than methods
 			if (!t.isFunction(fn) || t.isArrowFunctionExpression(fn)) return;
