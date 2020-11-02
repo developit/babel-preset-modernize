@@ -287,6 +287,10 @@ export default ({ types: t }) => {
 		}
 
 		if (rest) {
+			// bailout
+			if (t.isAssignmentExpression(rest)) {
+				return;
+			}
 			if (isIterable) {
 				pattern[restOffset || pattern.length] = t.restElement(t.clone(rest.node.id));
 			} else {
