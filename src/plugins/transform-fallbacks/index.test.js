@@ -65,4 +65,17 @@ describe('transform-fallbacks', () => {
 			)
 		).toMatchInlineSnapshot(`"e.addEventListener ? e.addEventListener(t, o, !1) : e.attachEvent(\\"only\\" + t, o);"`);
 	});
+
+	it('should ignore mismatched arg', () => {
+		expect(
+			babel(
+				dent`
+					e.addEventListener ? e.addEventListener(t, o, !1) : e.attachEvent("on" + t, () => o())
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(
+			`"e.addEventListener ? e.addEventListener(t, o, !1) : e.attachEvent(\\"on\\" + t, () => o());"`
+		);
+	});
 });

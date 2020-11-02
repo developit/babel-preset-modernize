@@ -20,6 +20,18 @@ export default function({ types: t }) {
 	/** @param {babel.NodePath} p @param {string} name */
 	const isNamedIdentifier = (p, name) => p.isIdentifier() && p.node.name === name;
 
+	/** @param {babel.NodePath} p @param {string} prefix @param {babel.NodePath} [ofIdent] */
+	function isPrefix(p, prefix, ofIdent) {
+		if (!p.isBinaryExpression() || p.node.operator !== '+') return false;
+		const left = p.get('left');
+		if (!left.isStringLiteral() || left.node.value !== prefix) return false;
+		if (ofIdent && !nodesAreEquivalent(p.get('right'), ofIdent)) return false;
+		return true;
+	}
+
+	/** @param {babel.NodePath} a @param {babel.NodePath} b */
+	const nodesAreEquivalent = (a, b) => t.isNodesEquivalent(a.node || a, b.node || b);
+
 	/** @type {[string, string, boolean][]} */
 	const PAIRS = [
 		['addEventListener', 'attachEvent', true],
@@ -33,18 +45,14 @@ export default function({ types: t }) {
 			if (!isPropertyAccess(test, check)) continue;
 			if (!isMethodCall(cons, check) || !isMethodCall(alt, fallback)) continue;
 			let [legacy, retain] = polarity ? [alt, cons] : [cons, alt];
-			if (isPrefix(legacy.get('arguments.0'), 'on', retain.get('arguments.0'))) {
+			if (
+				isPrefix(legacy.get('arguments.0'), 'on', retain.get('arguments.0')) &&
+				nodesAreEquivalent(legacy.get('arguments.1'), retain.get('arguments.1'))
+			) {
 				return retain;
 			}
 		}
 	}
-
-	const isPrefix = (path, prefix, ofIdent) =>
-		path.isBinaryExpression() &&
-		path.node.operator === '+' &&
-		path.get('left').isStringLiteral() &&
-		path.node.left.value === prefix &&
-		(!ofIdent || t.isNodesEquivalent(path.node.right, ofIdent.node || ofIdent));
 
 	return {
 		name: 'transform-fallbacks',
