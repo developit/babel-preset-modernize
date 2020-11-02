@@ -5,9 +5,9 @@
  * @param {babel} api
  * @returns {babel.PluginObj}
  */
-export default function({ types: t }) {
+export default function({}) {
 	return {
-		name: 'transform-block-scope',
+		name: 'transform-block-scpe',
 		visitor: {
 			VariableDeclaration(path) {
 				if (path.node.kind !== 'var') return;
