@@ -15,7 +15,66 @@ export default function transformTemplateLiterals({ types: t }) {
 	return {
 		name: 'transform-template-literals',
 		visitor: {
-			CallExpression(path, state) {
+			BinaryExpression(path) {
+				if (path.node.operator !== '+') return;
+
+				// Disable recursion, we handle nesting internally.
+				if (t.isBinaryExpression(path.parent)) return;
+
+				let p = path;
+				const segments = [];
+				while (p && p.isBinaryExpression()) {
+					segments.push(p.get('right'));
+					p = p.get('left');
+				}
+				if (p) segments.push(p);
+				segments.reverse();
+
+				// ignore single strings:
+				if (segments.length < 2) return;
+
+				// ignore "concatenation" that doesn't start with a string:
+				// const first = segments[0];
+				// if (!first.isStringLiteral()) return;
+
+				const tpls = [];
+				const exprs = [];
+
+				let str = '';
+				let inString = true;
+				let hasExpression = false;
+				for (let i = 0; i < segments.length; i++) {
+					const isLast = i === segments.length - 1;
+					const p = segments[i];
+					const isString = p.isStringLiteral();
+					if (isString) {
+						str += p.node.value;
+						inString = true;
+					} else {
+						// Two expression fields side-by-side is a bailout case.
+						// It's unsafe to assume string concat, could be addition.
+						if (!inString) {
+							return;
+						}
+						tpls.push(t.templateElement({ raw: esc(str) }, isLast));
+						exprs.push(t.clone(p.node));
+						hasExpression = true;
+						inString = false;
+						str = '';
+					}
+				}
+
+				// Might be worth revisiting, but if there are no expressions it's less likely to be a template literal.
+				// The case where this is incorrect: `a${"b"}c` transpiles to three strings: 'a'+"b"+'c'.
+				if (!hasExpression) return;
+
+				if (!inString || str) {
+					tpls.push(t.templateElement({ raw: esc(str) }, true));
+				}
+
+				path.replaceWith(t.templateLiteral(tpls, exprs));
+			},
+			CallExpression(path) {
 				const callee = path.get('callee');
 
 				if (!isConcat(callee)) return;
@@ -41,6 +100,8 @@ export default function transformTemplateLiterals({ types: t }) {
 						rootPath = p;
 					}
 				}
+
+				if (concats.length === 1 && concats[0].length === 0) return;
 
 				for (let n = 0; n < concats.length; n++) {
 					const args = concats[n];

@@ -3,10 +3,48 @@ import plugin from '.';
 
 const CONFIG = {
 	compact: false,
+	generatorOpts: {
+		retainLines: true
+	},
 	plugins: [plugin]
 };
 
 describe('transform-template-literals', () => {
+	describe('string concat (babel loose mode)', () => {
+		it('should transform concatenated strings', () => {
+			expect(babel(`'a' + foo;`, CONFIG)).toMatchInlineSnapshot(`"\`a\${foo}\`;"`);
+			expect(babel(`'a' + foo + 'b';`, CONFIG)).toMatchInlineSnapshot(`"\`a\${foo}b\`;"`);
+			expect(babel(`'a' + foo + 'b' + bar;`, CONFIG)).toMatchInlineSnapshot(`"\`a\${foo}b\${bar}\`;"`);
+			expect(babel(`'a' + foo + 'b' + bar + 'c';`, CONFIG)).toMatchInlineSnapshot(`"\`a\${foo}b\${bar}c\`;"`);
+
+			expect(babel(`'a' + (foo ? " b" : "");`, CONFIG)).toMatchInlineSnapshot(`"\`a\${foo ? \\" b\\" : \\"\\"}\`;"`);
+			expect(babel(`'a' + (foo ? " " + foo : "");`, CONFIG)).toMatchInlineSnapshot(
+				`"\`a\${foo ? \` \${foo}\` : \\"\\"}\`;"`
+			);
+		});
+
+		it('should transform single leading expressions', () => {
+			expect(babel(`foo + 'a';`, CONFIG)).toMatchInlineSnapshot(`"\`\${foo}a\`;"`);
+			expect(babel(`foo + 'a' + 'b';`, CONFIG)).toMatchInlineSnapshot(`"\`\${foo}ab\`;"`);
+			expect(babel(`foo + 'a' + bar + 'b';`, CONFIG)).toMatchInlineSnapshot(`"\`\${foo}a\${bar}b\`;"`);
+			expect(babel(`1 + '2' + '3';`, CONFIG)).toMatchInlineSnapshot(`"\`\${1}23\`;"`);
+			expect(babel(`1 + '2' + 3 + '4';`, CONFIG)).toMatchInlineSnapshot(`"\`\${1}2\${3}4\`;"`);
+		});
+
+		it('should ignore concatenated strings', () => {
+			expect(babel(`'a';`, CONFIG)).toMatchInlineSnapshot(`"'a';"`);
+			expect(babel(`'a' + 'b';`, CONFIG)).toMatchInlineSnapshot(`"'a' + 'b';"`);
+			expect(babel(`'a' + 'b' + 'c';`, CONFIG)).toMatchInlineSnapshot(`"'a' + 'b' + 'c';"`);
+		});
+
+		it('should ignore + that is not safe to assume concatenation', () => {
+			expect(babel(`1 + 2;`, CONFIG)).toMatchInlineSnapshot(`"1 + 2;"`);
+			expect(babel(`1 + 2 + 'a';`, CONFIG)).toMatchInlineSnapshot(`"1 + 2 + 'a';"`);
+			expect(babel(`'a' + 1 + 2 + 'b';`, CONFIG)).toMatchInlineSnapshot(`"'a' + 1 + 2 + 'b';"`);
+			expect(babel(`a + b + 'c';`, CONFIG)).toMatchInlineSnapshot(`"a + b + 'c';"`);
+		});
+	});
+
 	it('should transform well-formed string.concat calls', () => {
 		expect(babel(`'a'.concat(foo);`, CONFIG)).toMatchInlineSnapshot(`"\`a\${foo}\`;"`);
 
