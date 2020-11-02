@@ -241,7 +241,7 @@ export default ({ types: t }) => {
 				// const _self = _super.apply(this,arguments); ... return _self;
 				for (const refPath of id.scope.getBinding(id.node.name).referencePaths) {
 					const fn = refPath.getFunctionParent().node;
-					if (fn !== ctorParent.node) {
+					if (fn !== path.node) {
 						preserveName = id.node.name;
 					} else if (t.isReturnStatement(refPath.parent)) {
 						refPath.parentPath.remove();
@@ -573,6 +573,7 @@ export default ({ types: t }) => {
 
 				// (function(){function P(){}return P;})()
 				const ret = getReturnedBindingPath(outer);
+				if (!ret) return;
 				if (!t.isNodesEquivalent(ctorParent.node, ret.node)) return;
 				if (!t.isCallExpression(outer.parent)) return;
 
