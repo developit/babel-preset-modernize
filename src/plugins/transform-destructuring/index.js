@@ -9,6 +9,8 @@
  *   - (easy) factor out `isNamedIdentifier(path, name)` helper
  *   - convert named identifier checks to scope-based equality lookups
  *   - somehow support destructuring assignment: `({ a } = b)`
+ * @param {babel} api
+ * @returns {babel.PluginObj}
  */
 export default ({ types: t }) => {
 	/**
@@ -272,9 +274,12 @@ export default ({ types: t }) => {
 				const resolved = prop.get('init.property').resolve().node;
 				if (t.isLiteral(resolved)) {
 					v = String(resolved.value);
-					// Might as well optimize static computed keys ({['a']: a} = ..)
+					// optimize static computed keys (a=_ref['404'] --> {'404': a})
 					computed = false;
-					id = t.identifier(v);
+					// optimize away pointless computed keys (a=_ref['a'] --> {a})
+					if (/^[^a-z$_][a-z0-9$_]*$/gi.test(v)) {
+						id = t.identifier(v);
+					}
 				}
 			}
 			if (isIterable) {
