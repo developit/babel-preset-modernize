@@ -42,6 +42,10 @@ describe('transform-template-literals', () => {
 			expect(babel(`1 + 2 + 'a';`, CONFIG)).toMatchInlineSnapshot(`"1 + 2 + 'a';"`);
 			expect(babel(`'a' + 1 + 2 + 'b';`, CONFIG)).toMatchInlineSnapshot(`"'a' + 1 + 2 + 'b';"`);
 			expect(babel(`a + b + 'c';`, CONFIG)).toMatchInlineSnapshot(`"a + b + 'c';"`);
+
+			expect(babel(`(Math.round(o) + "").replace('1','2');`, CONFIG)).toMatchInlineSnapshot(
+				`"\`\${Math.round(o)}\`.replace('1', '2');"`
+			);
 		});
 	});
 

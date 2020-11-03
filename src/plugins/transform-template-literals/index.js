@@ -66,11 +66,12 @@ export default function transformTemplateLiterals({ types: t }) {
 
 				// Might be worth revisiting, but if there are no expressions it's less likely to be a template literal.
 				// The case where this is incorrect: `a${"b"}c` transpiles to three strings: 'a'+"b"+'c'.
-				if (!hasExpression) return;
-
-				if (!inString || str) {
-					tpls.push(t.templateElement({ raw: esc(str) }, true));
+				if (!hasExpression) {
+					// path.replaceWith(t.stringLiteral(str));
+					return;
 				}
+
+				tpls.push(t.templateElement({ raw: esc(str) }, true));
 
 				path.replaceWith(t.templateLiteral(tpls, exprs));
 			},
