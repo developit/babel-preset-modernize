@@ -137,4 +137,133 @@ describe('transform-classes', () => {
 		}"
 	`);
 	});
+
+	it('should remove pointless constructor', () => {
+		expect(
+			babel(
+				dent`
+					function _inheritsLoose(subClass, superClass) {
+						subClass.prototype = Object.create(superClass.prototype);
+						subClass.prototype.constructor = subClass;
+						subClass.__proto__ = superClass;
+					}
+					var A = function (_B) {
+						_inheritsLoose(A, _B);
+						function A() {
+							return _B.apply(this, arguments) || this;
+						}
+						var _proto = A.prototype;
+						_proto.b = function b() {
+							return 42;
+						};
+						return A;
+					}(B);
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
+		"class A extends B {
+		  b() {
+		    return 42;
+		  }
+		}"
+	`);
+	});
+
+	it('should infer rest parameter forwarding to super()', () => {
+		const conf = {
+			...CONFIG,
+			plugins: [require('../transform-arguments'), plugin]
+		};
+		expect(
+			babel(
+				dent`
+					function _inheritsLoose(subClass, superClass) {
+						subClass.prototype = Object.create(superClass.prototype);
+						subClass.prototype.constructor = subClass;
+						subClass.__proto__ = superClass;
+					}
+					var A = function (_B) {
+						_inheritsLoose(A, _B);
+						function A() {
+							console.log("foo");
+
+							for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+								args[_key] = arguments[_key];
+							}
+
+							return _B.call.apply(_B, [this].concat(args)) || this;
+						}
+						return A;
+					}(B);
+				`,
+				conf
+			)
+		).toMatchInlineSnapshot(`
+		"class A extends B {
+		  constructor(...args) {
+		    console.log(\\"foo\\");
+		    super(...args);
+		  }
+		}"
+	`);
+	});
+
+	it('should remove pointless inferred rest parameter forwarding to super()', () => {
+		const conf = {
+			...CONFIG,
+			plugins: [require('../transform-arguments'), plugin]
+		};
+		expect(
+			babel(
+				dent`
+					function _inheritsLoose(subClass, superClass) {
+						subClass.prototype = Object.create(superClass.prototype);
+						subClass.prototype.constructor = subClass;
+						subClass.__proto__ = superClass;
+					}
+					var A = function (_B) {
+						_inheritsLoose(A, _B);
+						function A() {
+							for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+								args[_key] = arguments[_key];
+							}
+
+							return _B.call.apply(_B, [this].concat(args)) || this;
+						}
+						return A;
+					}(B);
+				`,
+				conf
+			)
+		).toMatchInlineSnapshot(`"class A extends B {}"`);
+	});
+
+	it('should preserve specific parameter forwarding to super()', () => {
+		expect(
+			babel(
+				dent`
+					function _inheritsLoose(subClass, superClass) {
+						subClass.prototype = Object.create(superClass.prototype);
+						subClass.prototype.constructor = subClass;
+						subClass.__proto__ = superClass;
+					}
+					var A = function (_B) {
+						_inheritsLoose(A, _B);
+						function A(x, y) {
+							return _B.call(this, x, y) || this;
+						}
+						return A;
+					}(B);
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
+		"class A extends B {
+		  constructor(x, y) {
+		    super(x, y);
+		  }
+		}"
+	`);
+	});
 });

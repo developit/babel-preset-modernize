@@ -61,7 +61,13 @@ export default ({ types: t }) => {
 		if (!t.isMemberExpression(callee)) return false;
 
 		// (function(_super){function P(){_super.apply(..)}..
-		const s = path.get('callee.object').resolve();
+		let s = path.get('callee.object').resolve();
+
+		let innerOp;
+		if (t.isMemberExpression(s) && isNamedIdentifier(s.node.property, 'call')) {
+			innerOp = 'call';
+			s = s.get('object').resolve();
+		}
 
 		let helper;
 		if (t.isCallExpression(s) && isCreateSuperHelper(s.get('callee').resolve())) {
@@ -77,12 +83,38 @@ export default ({ types: t }) => {
 		if (isNamedIdentifier(prop, 'apply')) {
 			apply = true;
 			args = [path.get('arguments.1')];
+
+			// S.call.apply(S, [this].concat( ... )):
+			if (innerOp === 'call') {
+				if (
+					args[0].isCallExpression() &&
+					t.isMemberExpression(args[0].node.callee) &&
+					isNamedIdentifier(args[0].node.callee.property, 'concat')
+				) {
+					args = args[0].get('arguments');
+				} else {
+					console.warn(`Unhandled Super.call.apply() usage: ${path.getSource()}`);
+				}
+			}
 		} else if (isNamedIdentifier(prop, 'call')) {
 			args = path.get('arguments.0').getAllNextSiblings();
 		} else {
 			return false;
 		}
 		return { apply, args, helper };
+	}
+
+	/** @param {babel.NodePath} path */
+	function looseResolve(path) {
+		let resolved = path.resolve();
+		if (resolved.isIdentifier()) {
+			const b = resolved.scope.getBinding(resolved.node.name);
+			const init = b.path.parentPath.get('init');
+			if (init && init.node) {
+				return init.resolve();
+			}
+		}
+		return resolved;
 	}
 
 	function processConstructor(path, state) {
@@ -111,25 +143,38 @@ export default ({ types: t }) => {
 
 			if (p.isAssignmentExpression()) {
 				const lhs = p.get('left');
-				if (lhs.isMemberExpression() && lhs.get('object').resolve().node === path.node) {
-					const id = t.clone(lhs.node.property);
-					const value = p.node.right;
-					if (t.isFunction(value)) {
-						const method = t.classMethod('method', id, value.params, value.body, lhs.node.computed, true);
-						method.async = value.async;
-						method.generator = value.generator;
-						members.push(method);
-					} else {
-						const prop = t.classProperty(id, value, null, null, lhs.node.computed, true);
-						members.push(prop);
+				if (lhs.isMemberExpression()) {
+					const obj = looseResolve(lhs.get('object'));
+					// A.b = ...
+					const isStatic = obj.node === path.node;
+					// var P=A.prototype; P.b = ...
+					const isMember =
+						obj.isMemberExpression() &&
+						isNamedIdentifier(obj.node.property, 'prototype') &&
+						obj.get('object').resolve().node === path.node;
+					if (isStatic || isMember) {
+						const id = t.clone(lhs.node.property);
+						const value = p.node.right;
+						if (t.isFunction(value)) {
+							const method = t.classMethod('method', id, value.params, value.body, lhs.node.computed, isStatic);
+							method.async = value.async;
+							method.generator = value.generator;
+							members.push(method);
+						} else {
+							const prop = t.classProperty(id, value, null, null, lhs.node.computed, isStatic);
+							members.push(prop);
+						}
 					}
 				}
 			}
 
-			if (p.isVariableDeclaration() && isCreateSuperHelper(p.get('declarations.0.init.callee').resolve())) {
-				reflectConstructedSuper = p.get('declarations.0.id');
-				//reflectConstructedSuper.remove();
-				return;
+			if (p.isVariableDeclaration()) {
+				const callee = p.get('declarations.0.init.callee').resolve();
+				if (callee.node && isCreateSuperHelper(callee)) {
+					reflectConstructedSuper = p.get('declarations.0.id');
+					//reflectConstructedSuper.remove();
+					return;
+				}
 			}
 
 			if (!p.isCallExpression()) return;
@@ -266,9 +311,16 @@ export default ({ types: t }) => {
 					t.variableDeclaration(kind || 'var', [t.variableDeclarator(t.identifier(preserveName), t.thisExpression())])
 				);
 			}
+			let args = sup.args.map(a => a.node);
+			if (sup.apply) {
+				let last = args.pop();
+				if (last) {
+					args.push(t.spreadElement(last));
+				}
+			}
 			p.replaceWithMultiple([
 				...before,
-				t.expressionStatement(t.callExpression(t.identifier('super'), sup.args.map(a => a.node))),
+				t.expressionStatement(t.callExpression(t.identifier('super'), args)),
 				...after
 			]);
 		});
@@ -279,14 +331,26 @@ export default ({ types: t }) => {
 		for (let i = path.node.params.length; i--; ) {
 			params[i] = path.node.params[i] || path.scope.generateUidIdentifier();
 		}
+		// Inject super() call, but not if it's a pointless constructor that just forwards arguments to super().
 		const loneBody = unwrapSoleBlockExpression(path.get('body'));
-		if (
-			t.isCallExpression(loneBody) &&
-			isNamedIdentifier(loneBody.node.callee, 'super') &&
-			loneBody.node.arguments.length === 0
-		) {
-			// omit empty constructor
-		} else {
+		let isPointlessConstructor = false;
+		if (t.isCallExpression(loneBody) && isNamedIdentifier(loneBody.node.callee, 'super')) {
+			const args = loneBody.get('arguments');
+			// super()
+			if (args.length === 0) {
+				isPointlessConstructor = true;
+			}
+			// constructor(...a){super(...a)}
+			else if (
+				args.length === 1 &&
+				t.isSpreadElement(args[0]) &&
+				t.isRestElement(params[0]) &&
+				t.isNodesEquivalent(args[0].node.argument, params[0].argument)
+			) {
+				isPointlessConstructor = true;
+			}
+		}
+		if (!isPointlessConstructor) {
 			members.unshift(t.classMethod('constructor', t.identifier('constructor'), params, path.node.body));
 		}
 		const body = t.classBody(members);
