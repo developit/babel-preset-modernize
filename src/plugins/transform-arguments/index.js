@@ -141,6 +141,7 @@ export default function transformArguments({ types: t }) {
 			},
 			VariableDeclarator(path, state) {
 				let init = path.get('init');
+				if (!init.node) return;
 				let test = init.get('test');
 				let defaultValue = init.node && init.node.alternate;
 

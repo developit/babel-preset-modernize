@@ -142,4 +142,25 @@ describe('transform-arguments', () => {
 		}"
 	`);
 	});
+
+	it('should handle for init declarations', () => {
+		expect(
+			babel(
+				dent`
+				function t(t) {
+					for (var n, r, o = t[0], i = t[1], c = 0, s = []; c < o.length; c++) r = o[c], Object.prototype.hasOwnProperty.call(a, r) && a[r] && s.push(a[r][0]), a[r] = 0;
+					for (n in i) Object.prototype.hasOwnProperty.call(i, n) && (e[n] = i[n]);
+					for (u && u(t); s.length;) s.shift()()
+				}
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
+		"function t(t) {
+		  for (var n, r, o = t[0], i = t[1], c = 0, s = []; c < o.length; c++) r = o[c], Object.prototype.hasOwnProperty.call(a, r) && a[r] && s.push(a[r][0]), a[r] = 0;
+		  for (n in i) Object.prototype.hasOwnProperty.call(i, n) && (e[n] = i[n]);
+		  for (u && u(t); s.length;) s.shift()();
+		}"
+	`);
+	});
 });
