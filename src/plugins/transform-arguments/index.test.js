@@ -11,8 +11,8 @@ describe('transform-arguments', () => {
 		expect(
 			babel(
 				dent`
-			function x() {}
-		`,
+					function x() {}
+				`,
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`"function x() {}"`);
@@ -47,19 +47,24 @@ describe('transform-arguments', () => {
 
 	it('should restore shadowed default parameters', () => {
 		expect(
-			babel(dent`
-				var DEFAULT = 'default';
-				function foo({ a: _ref$a }) {
-					var a$1 = _ref$a === void 0 ? DEFAULT : _ref$a;
-					return a$1;
-				}
-			`)
+			babel(
+				dent`
+					var DEFAULT = 'default';
+					function foo({ a: _ref$a }) {
+						var a$1 = _ref$a === void 0 ? DEFAULT : _ref$a;
+						return a$1;
+					}
+				`,
+				CONFIG
+			)
 		).toMatchInlineSnapshot(`
-			"var DEFAULT = 'default';
-			function foo({ a: a$1 = DEFAULT }) {
-			  return a$1;
-			}"
-		`);
+		"var DEFAULT = 'default';
+		function foo({
+		  a: a$1 = DEFAULT
+		}) {
+		  return a$1;
+		}"
+	`);
 	});
 
 	it('should cooperate with transform-array-spread', () => {
@@ -111,5 +116,30 @@ describe('transform-arguments', () => {
 			  return a;
 			}"
 		`);
+	});
+
+	it('should handle leading optional parameters', () => {
+		// note: this one is tricky because Terser compresses the parameter logic so that it is mixed with defaults.
+		const conf = {
+			...CONFIG,
+			plugins: [[plugin, { loose: true }]]
+		};
+		expect(
+			babel(
+				dent`
+					function foo() {
+						var e = arguments.length > 0 && void 0 !== arguments[0] && arguments[0],
+							t = arguments.length > 1 ? arguments[1] : void 0,
+							n = arguments.length > 2 ? arguments[2] : void 0;
+						return e ? a().createElement(n, {}, t) : t
+					}
+				`,
+				conf
+			)
+		).toMatchInlineSnapshot(`
+		"function foo(e = false, t, n) {
+		  return e ? a().createElement(n, {}, t) : t;
+		}"
+	`);
 	});
 });

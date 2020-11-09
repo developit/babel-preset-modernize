@@ -17,7 +17,6 @@ export default function transformArguments({ types: t }) {
 		const node = getNode(path);
 
 		if (t.isIdentifier(node) && t.isIdentifier(node, UNDEFINED)) return true;
-		// if (t.isIdentifier(node) && t.shallowEqual(node, UNDEFINED)) return true;
 
 		if (t.isUnaryExpression(node) && node.operator === 'void') return true;
 
@@ -60,15 +59,11 @@ export default function transformArguments({ types: t }) {
 		if (!func) return;
 
 		const checked = isUndefinedCheck(condition, '==');
-		// if (checked && !t.isAssignmentExpression(assignment)) {
-		// 	console.log(assignment.node);
-		// }
 		// t === undefined || (t = "foo")
 		if (checked && t.isAssignmentExpression(assignment) && t.isNodesEquivalent(checked.node, assignment.node.left)) {
 			const binding = path.scope.getBinding(getNode(checked).name);
 			if (binding && binding.kind === 'param') {
-				const pattern = t.assignmentPattern(t.clone(binding.identifier), assignment.node.right);
-				binding.path.replaceWith(pattern);
+				binding.path.replaceWith(paramWithDefault(binding.identifier, assignment.node.right));
 				path.remove();
 			}
 		}
@@ -82,21 +77,28 @@ export default function transformArguments({ types: t }) {
 	 * @param {babel.NodePath} test
 	 */
 	function shadowedDefaultParam(path, test) {
+		// console.log('SHADOW: ', path.getSource(), isUndefinedCheck(test, '=='));
 		const checked = isUndefinedCheck(test, '==');
 		if (!checked) return;
 
 		const name = getNode(checked).name;
 		const binding = checked.scope.getBinding(name);
+		// if (binding && binding.kind !== 'param') console.warn(binding.kind, path.getSource);
 		if (!binding || binding.kind !== 'param') return;
 
 		let bindingPath = binding.path;
 		if (t.isObjectPattern(bindingPath)) {
 			bindingPath = bindingPath.getBindingIdentifierPaths()[name];
 		}
-		const pattern = t.assignmentPattern(t.clone(path.node.id), path.node.init.consequent);
-		bindingPath.replaceWith(pattern);
+		bindingPath.replaceWith(paramWithDefault(path.node.id, path.node.init.consequent));
 		path.remove();
 		return true;
+	}
+
+	function paramWithDefault(ident, defaultValue) {
+		const param = t.clone(getNode(ident));
+		if (isUndefined(defaultValue)) return param;
+		return t.assignmentPattern(param, t.clone(getNode(defaultValue)));
 	}
 
 	return {
@@ -131,21 +133,35 @@ export default function transformArguments({ types: t }) {
 					const arg = right.node.left;
 					const binding = right.scope.getBinding(arg.name);
 					if (binding.kind === 'param') {
-						binding.path.replaceWith(t.assignmentPattern(t.clone(arg), t.clone(right.node.right)));
+						binding.path.replaceWith(paramWithDefault(arg, right.node.right));
 						path.remove();
 						return;
 					}
 				}
 			},
 			VariableDeclarator(path, state) {
-				// only ternaries
-				if (!t.isConditionalExpression(path.get('init'))) return;
+				let init = path.get('init');
+				let test = init.get('test');
+				let defaultValue = init.node && init.node.alternate;
+
+				// Allow logical expressions, since ternaries are often minified to them.
+				// The following two are equivalent:
+				//   x = arguments.length>0 && arguments[0] !== void 0 ? arguments[0] : false
+				//   x = arguments.length>0 && arguments[0] !== void 0 && arguments[0]
+				if (t.isLogicalExpression(init)) {
+					test = init.get('left');
+					if (init.node.operator === '&&') {
+						defaultValue = t.booleanLiteral(false);
+					} else {
+						defaultValue = init.get('alternate');
+					}
+				} else if (!t.isConditionalExpression(init)) {
+					return;
+				}
 
 				// only functions (arguments access)
 				const func = path.getFunctionParent();
 				if (!func) return;
-
-				const test = path.get('init.test');
 
 				let expr = test;
 				if (t.isLogicalExpression(test)) {
@@ -166,7 +182,7 @@ export default function transformArguments({ types: t }) {
 					// install the optional parameter pattern
 					const index = expr.node.property.value;
 					const arg = path.get('id').node;
-					func.node.params[index] = t.assignmentPattern(t.clone(arg), path.get('init.alternate').node);
+					func.node.params[index] = paramWithDefault(arg, defaultValue);
 					path.remove();
 				}
 				// Check for `arguments.length > 2` or `arguments.length >= 2`
@@ -182,8 +198,13 @@ export default function transformArguments({ types: t }) {
 					let index = expr.node.right.value;
 					if (expr.node.operator === '>=') index += 1;
 					const arg = path.get('id').node;
-					func.node.params[index] = t.assignmentPattern(t.clone(arg), path.get('init.alternate').node);
+					func.node.params[index] = paramWithDefault(arg, defaultValue);
 					path.remove();
+				}
+
+				// TODO: remove me, should never be needed
+				for (let i = 0; i < func.node.params.length; i++) {
+					func.node.params[i] = func.node.params[i] || path.scope.generateUidIdentifier('_un');
 				}
 			},
 			LogicalExpression(path) {
@@ -244,14 +265,16 @@ export default function transformArguments({ types: t }) {
 						.get('object')
 						.resolve()
 						.parentPath.remove();
-					for (const decl of path.get('init.declarations')) {
-						const init = decl.node.init;
-						if (
-							t.isMemberExpression(init) &&
-							t.isIdentifier(init.object, ARGUMENTS) &&
-							t.isIdentifier(init.property, t.identifier('length'))
-						) {
-							decl.remove();
+					if (path.node.init) {
+						for (const decl of path.get('init.declarations')) {
+							const init = decl.node.init;
+							if (
+								t.isMemberExpression(init) &&
+								t.isIdentifier(init.object, ARGUMENTS) &&
+								t.isIdentifier(init.property, t.identifier('length'))
+							) {
+								decl.remove();
+							}
 						}
 					}
 					if (path.get('init').node && path.get('init.declarations').length) {
