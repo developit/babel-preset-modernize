@@ -5,10 +5,12 @@ import path from 'path';
  * @param {Object} [options]
  * @param {boolean} [options.loose=false] Loose mode enables transforms that produce smaller output but may cause issues with certain code.
  * @param {boolean} [options.module=true] Assume code will be run in a Strict Mode or ES Modules environment.
+ * @param {boolean} [options.webpack=true] Parse and explode Webpack bundles
  */
 export default function babelPresetModules(_, options = {}) {
 	const loose = options.loose === true;
 	const module = options.module !== false;
+	const webpack = options.webpack !== false;
 
 	return {
 		plugins: [
@@ -26,7 +28,7 @@ export default function babelPresetModules(_, options = {}) {
 			path.resolve(__dirname, './plugins/transform-implicit-scope'),
 			path.resolve(__dirname, './plugins/transform-array-spread'),
 			path.resolve(__dirname, './plugins/transform-template-literals'),
-			path.resolve(__dirname, './plugins/transform-optimize-webpack'),
+			webpack && path.resolve(__dirname, './plugins/transform-optimize-webpack'),
 			path.resolve(__dirname, './plugins/transform-remove-polyfills'),
 			module && path.resolve(__dirname, './plugins/transform-implicit-strict')
 		].filter(Boolean)
