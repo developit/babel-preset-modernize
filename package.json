@@ -1,5 +1,5 @@
 {
-  "name": "babel-preset-optimize",
+  "name": "babel-preset-modernize",
   "version": "0.0.1",
   "description": "nothing to see here",
   "main": "dist/index.js",
