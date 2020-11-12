@@ -161,13 +161,13 @@ export default function({ types: t, template }) {
 						const v = outer.replaceWithMultiple(
 							value.get('properties').map(p => {
 								// const computed = p.node.computed || p.node.key.computed || !t.isIdentifier(p.node.key);
-								const key = t.isIdentifier(p.node.key)
-									? t.clone(p.node.key)
-									: t.identifier(p.get('key').evaluate().value);
-								names.push(key.name);
+								let keyName = t.isIdentifier(p.node.key) ? p.node.key.name : p.get('key').evaluate().value;
+								const computed = !t.isValidIdentifier(keyName);
+								const key = computed ? t.stringLiteral(keyName) : t.identifier(keyName);
+								names.push(keyName);
 								return t.assignmentExpression(
 									'=',
-									t.memberExpression(t.clone(outer.node.left), key),
+									t.memberExpression(t.clone(outer.node.left), key, computed),
 									t.clone(p.node.value)
 								);
 							})

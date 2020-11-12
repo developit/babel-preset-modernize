@@ -8,15 +8,15 @@
  */
 export default ({ types: t }) => {
 	function isClassCallCheck(path) {
-		return /call a class as a function/.test(path.getSource());
+		return path.node && /call a class as a function/.test(path.getSource());
 	}
 
 	function isPossibleConstructorReturn(path) {
-		return /super\(\) hasn't been called/.test(path.getSource());
+		return path.node && /super\(\) hasn't been called/.test(path.getSource());
 	}
 
 	function isCreateSuperHelper(path) {
-		return /Reflect\.construct\(/.test(path.getSource());
+		return path.node && /Reflect\.construct\(/.test(path.getSource());
 	}
 
 	// function isInheritsHelper(path) {
