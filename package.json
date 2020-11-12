@@ -18,7 +18,6 @@
     "dependencies"
   ],
   "files": [
-    "src",
     "dist"
   ],
   "babel": {
