@@ -1,7 +1,7 @@
 import path from 'path';
 
 /**
- * babel-preset-optimize is a preset that transforms unweildy source into something bundlers can optimize.
+ * A preset that transforms unweildy transpiled code into modern source that engines and bundlers can better optimize.
  * @param {Object} [options]
  * @param {boolean} [options.loose=false] Loose mode enables transforms that produce smaller output but may cause issues with certain code.
  * @param {boolean} [options.module=true] Assume code will be run in a Strict Mode or ES Modules environment.

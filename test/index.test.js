@@ -2,24 +2,24 @@ import { babel, dent } from './_util';
 import preset from '../src';
 
 function babelPretty(code, loose) {
-	return babel(code, { presets: [
-		[preset, { loose }]
-	], compact: false });
+	return babel(code, { presets: [[preset, { loose }]], compact: false });
 }
 
-describe('babel-preset-optimize', () => {
+describe('preset', () => {
 	it('should be a valid babel plugin', () => {
 		expect(preset).toEqual(expect.any(Function));
 
-		expect(preset()).toMatchObject({
+		expect(preset({})).toMatchObject({
 			plugins: expect.any(Array)
 		});
 	});
 
 	it('should do nothing to already-modern code', () => {
-		expect(babelPretty(dent`
+		expect(
+			babelPretty(dent`
 			const x = 1;
-		`)).toMatchInlineSnapshot(`"const x = 1;"`);
+		`)
+		).toMatchInlineSnapshot(`"const x = 1;"`);
 
 		const code = dent`
 			import foo from 'foo';
