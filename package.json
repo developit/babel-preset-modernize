@@ -1,11 +1,11 @@
 {
   "name": "babel-preset-modernize",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "nothing to see here",
   "main": "dist/index.js",
   "scripts": {
     "start": "concurrently -r 'npm:watch:* -s'",
-    "build": "babel src -d dist --ignore '**/*.test.js' && npm run -s build:standalone",
+    "build": "babel src --minified --no-comments -d dist --ignore '**/*.test.js' && npm run -s build:standalone",
     "build:standalone": "BABEL_ENV=standalone microbundle --no-sourcemap -f cjs src/index.js -o dist/standalone.js",
     "test": "eslint src test && jest --colors",
     "watch:test": "jest --watch",

@@ -7,7 +7,7 @@ import path from 'path';
  * @param {boolean} [options.module=true] Assume code will be run in a Strict Mode or ES Modules environment.
  * @param {boolean} [options.webpack=true] Parse and explode Webpack bundles
  */
-export default function babelPresetModules(_, options = {}) {
+export default function babelPresetModernize(_, options = {}) {
 	const loose = options.loose === true;
 	const module = options.module !== false;
 	const webpack = options.webpack !== false;
