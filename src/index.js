@@ -5,18 +5,20 @@ import path from 'path';
  * @param {Object} [options]
  * @param {boolean} [options.loose=false] Loose mode enables transforms that produce smaller output but may cause issues with certain code.
  * @param {boolean} [options.module=true] Assume code will be run in a Strict Mode or ES Modules environment.
+ * @param {boolean} [options.cjs=false] Attempt to convert CommonJS to ES Modules (not enabled by default, can break imports)
  * @param {boolean} [options.webpack=true] Parse and explode Webpack bundles
  */
 export default function babelPresetModernize(_, options = {}) {
 	const loose = options.loose === true;
 	const module = options.module !== false;
 	const webpack = options.webpack !== false;
+	const cjs = module && options.cjs === true;
 
 	return {
 		plugins: [
 			path.resolve(__dirname, './plugins/transform-umd-to-cjs'),
 			// Currently disabled, causes problems with non-CJS files:
-			// path.resolve(__dirname, './plugins/transform-cjs-to-esm'),
+			cjs && path.resolve(__dirname, './plugins/transform-cjs-to-esm'),
 			[path.resolve(__dirname, './plugins/transform-arguments'), { loose }],
 			path.resolve(__dirname, './plugins/transform-destructuring'),
 			path.resolve(__dirname, './plugins/transform-classes'),
