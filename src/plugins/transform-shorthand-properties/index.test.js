@@ -18,10 +18,10 @@ describe('transform-shorthand-properties', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"(foo => ({
-				foo
-			}));"
-		`);
+		"foo => ({
+			foo
+		});"
+	`);
 	});
 
 	it('should convert locally-scoped identifiers to their shorthand names', () => {
@@ -35,10 +35,10 @@ describe('transform-shorthand-properties', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"(foo => ({
-				foo
-			}));"
-		`);
+		"foo => ({
+			foo
+		});"
+	`);
 	});
 
 	it('should ignore properties with already bound local names', () => {
@@ -52,9 +52,9 @@ describe('transform-shorthand-properties', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"((foo, a) => ({
-				foo: a
-			}));"
-		`);
+		"(foo, a) => ({
+			foo: a
+		});"
+	`);
 	});
 });

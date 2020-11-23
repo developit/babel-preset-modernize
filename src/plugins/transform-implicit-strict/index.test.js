@@ -26,7 +26,7 @@ describe('transform-implicit-strict', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`function foo () {}`);
+		).toMatchInlineSnapshot(`"function foo() {}"`);
 	});
 
 	it('should ignore other directives', () => {
@@ -37,7 +37,7 @@ describe('transform-implicit-strict', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`"use strong";`);
+		).toMatchInlineSnapshot(`"\\"use strong\\";"`);
 
 		expect(
 			babel(
@@ -48,6 +48,10 @@ describe('transform-implicit-strict', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`function foo () { "use strong"; }`);
+		).toMatchInlineSnapshot(`
+		"function foo() {
+			\\"use strong\\";
+		}"
+	`);
 	});
 });

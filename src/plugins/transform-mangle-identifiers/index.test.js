@@ -15,8 +15,6 @@ describe('transform-mangle-identifiers', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`
-			"var a = 1;"
-		`);
+		).toMatchInlineSnapshot(`"var f = 1;"`);
 	});
 });

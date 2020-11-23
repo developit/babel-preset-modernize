@@ -22,7 +22,7 @@ describe('transform-implicit-scope', () => {
 		expect(
 			babel(
 				dent`
-					! function() {
+					!function() {
 						console.log(1);
 					}()
 				`,

@@ -8,12 +8,17 @@ const CONFIG = {
 
 describe('transform-cjs-esm', () => {
 	it('should transform noop UMD', () => {
-		expect(babel(dent`
+		expect(
+			babel(
+				dent`
 			function factory() {}
 
 			module.exports = factory()
 			module.exports['default'] = factory()
-		`, CONFIG)).toMatchInlineSnapshot(`
+		`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
 		"var _default, _default2;
 		function factory() {}
 		_default = factory();
@@ -24,17 +29,22 @@ describe('transform-cjs-esm', () => {
 	});
 
 	it('should transform inline module.exports assignment', () => {
-		expect(babel(dent`
+		expect(
+			babel(
+				dent`
 			exports.default = {
 				log(){}
 			};
-		`, CONFIG)).toMatchInlineSnapshot(`
-			"var _default;
-			_default = {
-			  log() {}
-			};
-			export { _default as default };"
-		`);
+		`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
+		"var _default;
+		_default = {
+			log() {}
+		};
+		export { _default as default };"
+	`);
 	});
 
 	describe('exports', () => {
@@ -51,25 +61,37 @@ describe('transform-cjs-esm', () => {
 				}
 			`;
 
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				${CODE}
 				module.exports = { isASCIIDigit, isASCIIAlpha, isASCIIAlphanumeric };
-			`, CONFIG)).toEqual(dent`
+			`,
+					CONFIG
+				)
+			).toEqual(dent`
 				${CODE}
 				export { isASCIIDigit, isASCIIAlpha, isASCIIAlphanumeric };
 			`);
 
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				${CODE}
 				exports = { isASCIIDigit, isASCIIAlpha, isASCIIAlphanumeric };
-			`, CONFIG)).toEqual(dent`
+			`,
+					CONFIG
+				)
+			).toEqual(dent`
 				${CODE}
 				export { isASCIIDigit, isASCIIAlpha, isASCIIAlphanumeric };
 			`);
 		});
 
 		it('should infer named exports from object assignment including inline or reference values', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const a = 0;
 				module.exports = {
 					a,
@@ -80,20 +102,25 @@ describe('transform-cjs-esm', () => {
 					d: 3
 				};
 				exports.foo = 'bar';
-			`, CONFIG)).toMatchInlineSnapshot(`
-				"const a = 0;
-				function _b() {
-				  return 1;
-				}
-				const _c = () => 2;
-				const _d = 3;
-				export const foo = 'bar';
-				export { a, _b as b, _c as c, _d as d };"
-			`);
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
+			"const a = 0;
+			function _b() {
+				return 1;
+			}
+			const _c = () => 2;
+			const _d = 3;
+			export const foo = 'bar';
+			export { a, _b as b, _c as c, _d as d };"
+		`);
 		});
 
 		it('should resolve intermediary export objects', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const a = 1;
 				const b = 2;
 				const iface = {
@@ -101,7 +128,10 @@ describe('transform-cjs-esm', () => {
 				  b,
 				};
 				module.exports = iface;
-			`, CONFIG)).toMatchInlineSnapshot(`
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
 				"const a = 1;
 				const b = 2;
 				export { a, b };"
@@ -109,13 +139,18 @@ describe('transform-cjs-esm', () => {
 		});
 
 		it('should convert export self-references to locals', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const iface = {
 				  a() {}
 				};
 				iface.a();
 				module.exports = iface;
-			`, CONFIG)).toMatchInlineSnapshot(`
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
 				"function _a() {}
 				_a();
 				export { _a as a };"
@@ -123,85 +158,115 @@ describe('transform-cjs-esm', () => {
 		});
 
 		it('should retain export self-references when runtime use is required', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const iface = {
 				  a: () => {}
 				};
 				iface.a();
 				console.log(iface)
 				module.exports = iface;
-			`, CONFIG)).toMatchInlineSnapshot(`
-				"const _a = () => {};
-				const iface = {
-				  a: _a
-				};
-				_a();
-				console.log(iface);
-				export { _a as a };"
-			`);
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
+			"const _a = () => {};
+			const iface = {
+				a: _a
+			};
+			_a();
+			console.log(iface);
+			export { _a as a };"
+		`);
 
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const iface = {
 				  a() {}
 				};
 				iface.a();
 				console.log(iface)
 				module.exports = iface;
-			`, CONFIG)).toMatchInlineSnapshot(`
-				"function _a() {}
-				const iface = {
-				  a: _a
-				};
-				_a();
-				console.log(iface);
-				export { _a as a };"
-			`);
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
+			"function _a() {}
+			const iface = {
+				a: _a
+			};
+			_a();
+			console.log(iface);
+			export { _a as a };"
+		`);
 		});
 	});
 
 	describe('imports', () => {
 		it('should infer named imports from static property access', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const json = require('foo.json');
 				const p = 'foo';
 				console.log(json[p], json.p);
-			`, CONFIG)).toMatchInlineSnapshot(`
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
 				"import { foo as _foo, p as _p } from \\"foo.json\\";
 				console.log(_foo, _p);"
 			`);
 
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const Impl = require("./URLSearchParams-impl.js");
 				const x = Impl["UVString"];
-			`, CONFIG)).toMatchInlineSnapshot(`
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
 				"import { UVString as _UVString } from \\"./URLSearchParams-impl.js\\";
 				const x = _UVString;"
 			`);
 		});
 
 		it('should reuse named imports across callsites', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const usm = require("./url-parser");
 				const a = usm.basicURLParse(base);
 				(() => {
 					const b = usm.basicURLParse(url, { x: 1 });
 				})();
-			`, CONFIG)).toMatchInlineSnapshot(`
-				"import { basicURLParse as _basicURLParse } from \\"./url-parser\\";
-				const a = _basicURLParse(base);
-				(() => {
-				  const b = _basicURLParse(url, {
-				    x: 1
-				  });
-				})();"
-			`);
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
+			"import { basicURLParse as _basicURLParse } from \\"./url-parser\\";
+			const a = _basicURLParse(base);
+			(() => {
+				const b = _basicURLParse(url, {
+					x: 1
+				});
+			})();"
+		`);
 		});
 
 		it('should bail out of inferring named imports when spreading module interface', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const json = require('foo.json');
 				const { ...p } = json;
-			`, CONFIG)).toMatchInlineSnapshot(`
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
 				"import json from \\"foo.json\\";
 				const { ...p
 				} = json;"
@@ -209,11 +274,16 @@ describe('transform-cjs-esm', () => {
 		});
 
 		it('should bail out of inferring named imports for dynamic or numeric access', () => {
-			expect(babel(dent`
+			expect(
+				babel(
+					dent`
 				const mappingTable = require("./lib/mappingTable.json");
 				let end = mappingTable.length - 1;
 				const target = mappingTable[mid];
-			`, CONFIG)).toMatchInlineSnapshot(`
+			`,
+					CONFIG
+				)
+			).toMatchInlineSnapshot(`
 				"import mappingTable from \\"./lib/mappingTable.json\\";
 				let end = mappingTable.length - 1;
 				const target = mappingTable[mid];"

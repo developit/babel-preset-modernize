@@ -8,6 +8,6 @@ const CONFIG = {
 
 describe('transform-optimize-webpack', () => {
 	it('should work', () => {
-		expect(babel(dent``, CONFIG)).toMatchInlineSnapshot(``);
+		expect(babel(dent``, CONFIG)).toMatchInlineSnapshot(`""`);
 	});
 });

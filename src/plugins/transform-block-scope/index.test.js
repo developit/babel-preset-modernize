@@ -18,7 +18,7 @@ describe('transform-block-scope', () => {
 		`);
 		expect(b(`var a = function(){ return a; }`)).toMatchInlineSnapshot(`
 		"let a = function () {
-		  return a;
+			return a;
 		};"
 	`);
 	});
@@ -30,7 +30,7 @@ describe('transform-block-scope', () => {
 		`);
 		expect(b(`(a => { var a = 1; })();`)).toMatchInlineSnapshot(`
 		"(a => {
-		  var a = 1;
+			var a = 1;
 		})();"
 	`);
 	});

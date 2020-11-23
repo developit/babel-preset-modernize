@@ -1,8 +1,8 @@
 import { babel, dent } from './_util';
 import preset from '../src';
 
-function babelPretty(code, loose) {
-	return babel(code, { presets: [[preset, { loose }]], compact: false });
+function babelPretty(code, options) {
+	return babel(code, { presets: [[preset, options || {}]], compact: false });
 }
 
 describe('preset', () => {
@@ -44,27 +44,27 @@ describe('preset', () => {
 			})
 		`;
 
-		expect(babelPretty(code)).toMatchInlineSnapshot(`
-			"var _default;
-			import d from \\"dep\\";
-			_default = function lib(opts) {
-			  opts = opts || {};
-			  return d.create(Object.assign({}, opts, {
-			    isLib: true
-			  }));
-			};
-			export default _default;"
-		`);
+		expect(babelPretty(code, { cjs: true })).toMatchInlineSnapshot(`
+		"var _default;
+		import d from \\"dep\\";
+		_default = function lib(opts) {
+			opts = opts || {};
+			return d.create(Object.assign({}, opts, {
+				isLib: true
+			}));
+		};
+		export default _default;"
+	`);
 
-		expect(babelPretty(code, true)).toMatchInlineSnapshot(`
-			"var _default;
-			import d from \\"dep\\";
-			_default = function lib(opts = {}) {
-			  return d.create(Object.assign({}, opts, {
-			    isLib: true
-			  }));
-			};
-			export default _default;"
-		`);
+		expect(babelPretty(code, { cjs: true, loose: true })).toMatchInlineSnapshot(`
+		"var _default;
+		import d from \\"dep\\";
+		_default = function lib(opts = {}) {
+			return d.create(Object.assign({}, opts, {
+				isLib: true
+			}));
+		};
+		export default _default;"
+	`);
 	});
 });

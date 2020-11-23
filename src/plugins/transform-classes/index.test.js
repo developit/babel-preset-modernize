@@ -73,9 +73,9 @@ describe('transform-classes', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"class Profile extends Widget {
-		  static load() {
-		    return apiCall('/profile');
-		  }
+			static load() {
+				return apiCall('/profile');
+			}
 		}"
 	`);
 	});
@@ -131,9 +131,9 @@ describe('transform-classes', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"class Profile extends Widget {
-		  render() {
-		    return 42;
-		  }
+			render() {
+				return 42;
+			}
 		}"
 	`);
 	});
@@ -163,9 +163,9 @@ describe('transform-classes', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"class A extends B {
-		  b() {
-		    return 42;
-		  }
+			b() {
+				return 42;
+			}
 		}"
 	`);
 	});
@@ -201,10 +201,10 @@ describe('transform-classes', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"class A extends B {
-		  constructor(...args) {
-		    console.log(\\"foo\\");
-		    super(...args);
-		  }
+			constructor(...args) {
+				console.log(\\"foo\\");
+				super(...args);
+			}
 		}"
 	`);
 	});
@@ -260,9 +260,9 @@ describe('transform-classes', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"class A extends B {
-		  constructor(x, y) {
-		    super(x, y);
-		  }
+			constructor(x, y) {
+				super(x, y);
+			}
 		}"
 	`);
 	});

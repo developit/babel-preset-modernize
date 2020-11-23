@@ -39,10 +39,10 @@ describe('transform-arguments', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"function foo(a = 1, b = 2, ...c) {
-			  return [a, b, 1].concat(2, [3, 4], c);
-			}"
-		`);
+		"function foo(a = 1, b = 2, ...c) {
+			return [a, b, 1].concat(2, [3, 4], c);
+		}"
+	`);
 	});
 
 	it('should restore shadowed default parameters', () => {
@@ -60,9 +60,9 @@ describe('transform-arguments', () => {
 		).toMatchInlineSnapshot(`
 		"var DEFAULT = 'default';
 		function foo({
-		  a: a$1 = DEFAULT
+			a: a$1 = DEFAULT
 		}) {
-		  return a$1;
+			return a$1;
 		}"
 	`);
 	});
@@ -90,10 +90,10 @@ describe('transform-arguments', () => {
 				conf
 			)
 		).toMatchInlineSnapshot(`
-			"function foo(a = 1, b = 2, ...c) {
-			  return [a, b, 1, 2, 3, 4, ...c];
-			}"
-		`);
+		"function foo(a = 1, b = 2, ...c) {
+			return [a, b, 1, 2, 3, 4, ...c];
+		}"
+	`);
 	});
 
 	describe('options.loose', () => {
@@ -112,10 +112,10 @@ describe('transform-arguments', () => {
 				conf
 			)
 		).toMatchInlineSnapshot(`
-			"function foo(a = {}) {
-			  return a;
-			}"
-		`);
+		"function foo(a = {}) {
+			return a;
+		}"
+	`);
 	});
 
 	it('should handle leading optional parameters', () => {
@@ -138,7 +138,7 @@ describe('transform-arguments', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"function foo(e = false, t, n) {
-		  return e ? a().createElement(n, {}, t) : t;
+			return e ? a().createElement(n, {}, t) : t;
 		}"
 	`);
 	});
@@ -157,9 +157,9 @@ describe('transform-arguments', () => {
 			)
 		).toMatchInlineSnapshot(`
 		"function t(t) {
-		  for (var n, r, o = t[0], i = t[1], c = 0, s = []; c < o.length; c++) r = o[c], Object.prototype.hasOwnProperty.call(a, r) && a[r] && s.push(a[r][0]), a[r] = 0;
-		  for (n in i) Object.prototype.hasOwnProperty.call(i, n) && (e[n] = i[n]);
-		  for (u && u(t); s.length;) s.shift()();
+			for (var n, r, o = t[0], i = t[1], c = 0, s = []; c < o.length; c++) r = o[c], Object.prototype.hasOwnProperty.call(a, r) && a[r] && s.push(a[r][0]), a[r] = 0;
+			for (n in i) Object.prototype.hasOwnProperty.call(i, n) && (e[n] = i[n]);
+			for (u && u(t); s.length;) s.shift()();
 		}"
 	`);
 	});

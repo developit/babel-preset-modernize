@@ -34,9 +34,7 @@ describe('transform-iife-arrows', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`
-			"const x = (y => y + 2)(40);"
-		`);
+		).toMatchInlineSnapshot(`"const x = (y => y + 2)(40);"`);
 	});
 
 	it('should preserve IIFEs when scope is required', () => {
@@ -50,10 +48,10 @@ describe('transform-iife-arrows', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"(function() {
-				console.log(arguments);
-			})();"
-		`);
+		"(function () {
+			console.log(arguments);
+		})();"
+	`);
 
 		expect(
 			babel(
@@ -65,9 +63,9 @@ describe('transform-iife-arrows', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"(function() {
-				return this;
-			})();"
-		`);
+		"(function () {
+			return this;
+		})();"
+	`);
 	});
 });

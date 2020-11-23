@@ -3,6 +3,8 @@
  * Note that this transform only converts Functions to Arrows.
  * The process of inlining functions at their callsite is left to Terser.
  * @TODO double-check that this doesn't create scoping edge-caes.
+ *
+ * @param {import('@babel/core')} api
  */
 
 export default ({ types: t }) => ({
@@ -50,6 +52,11 @@ export default ({ types: t }) => ({
 
 			const node = t.clone(path.node);
 			node.type = 'ArrowFunctionExpression';
+
+			if (node.body.body.length === 1 && t.isReturnStatement(node.body.body[0])) {
+				node.body = node.body.body[0].argument;
+			}
+
 			// swapping a Function Expression with an arrow requires hoisting its identifier.
 			// TODO: this could probably just be done via hoist() into its own scope?
 			if (t.isFunctionDeclaration(path)) {

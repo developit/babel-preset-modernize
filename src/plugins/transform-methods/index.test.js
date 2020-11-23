@@ -7,6 +7,44 @@ const CONFIG = {
 };
 
 describe('transform-methods', () => {
+	it('should not convert arrow functions', () => {
+		expect(
+			babel(
+				dent`
+					({
+						foo: () => {}
+					});
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
+			"({
+				foo: () => {}
+			});"
+		`);
+	});
+
+	it('should not non-functions', () => {
+		expect(
+			babel(
+				dent`
+					const foo = 1;
+					({
+						foo,
+						bar: 42
+					});
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`
+			"const foo = 1;
+			({
+				foo,
+				bar: 42
+			});"
+		`);
+	});
+
 	it('should convert function properties to methods', () => {
 		expect(
 			babel(
@@ -24,7 +62,7 @@ describe('transform-methods', () => {
 		`);
 	});
 
-	it('should convert functions referenced only as property values to methods', () => {
+	it('should not move functions referenced only as property values to methods', () => {
 		expect(
 			babel(
 				dent`
@@ -36,8 +74,9 @@ describe('transform-methods', () => {
 				CONFIG
 			)
 		).toMatchInlineSnapshot(`
-			"({
-				foo() {}
+			"function foo() {}
+			({
+				foo
 			});"
 		`);
 	});

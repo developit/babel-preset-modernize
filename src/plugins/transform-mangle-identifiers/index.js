@@ -1,9 +1,13 @@
+/** @typedef {import('@babel/core')} babel */
+
 /**
  * Convert all identifiers to the shortest available
  * NOTE: this breaks in too many cases to be usable yet.
+ *
+ * @param {babel} api
+ * @returns {babel.PluginObj}
  */
-
-export default ({ types: t }) => {
+export default () => {
 	const sequence = new Set();
 	const chars = 'functionvarlets'.split('');
 	let vchars = 'abcdefghijklmnopqrstuvwxyz';
@@ -28,13 +32,6 @@ export default ({ types: t }) => {
 
 	return {
 		name: 'transform-mangle-identifiers',
-		pre() {
-			const opts = this.file.opts.generatorOpts;
-			opts.retainLines = false;
-			opts.comments = false;
-			opts.compact = true;
-			opts.minified = false;
-		},
 		visitor: {
 			Program: {
 				enter(path, state) {
@@ -53,30 +50,8 @@ export default ({ types: t }) => {
 				const name = path.node.name;
 				const binding = path.scope.getBinding(name);
 				const visited = state.get('visited');
-				// if (!binding || binding.path !== path) return;
+
 				if (!binding || visited.has(binding.path)) return;
-
-				for (let ref of binding.referencePaths) {
-					if (t.isExpressionStatement(ref)) ref = ref.parentPath;
-					// console.log(ref);
-					if (t.isProgram(ref.parent)) {
-						ref.remove();
-						binding.dereference();
-					}
-				}
-
-				if (!binding.referenced) {
-					if (
-						t.isVariableDeclarator(path.parent) ||
-						t.isImportSpecifier(path.parent) ||
-						t.isImportDefaultSpecifier(path.parent)
-					) {
-						path = path.parentPath;
-					}
-					// TODO: it would be nice to have the option to elide unused imports.
-					path.remove();
-					return;
-				}
 
 				const used = state.get('identifiers');
 				let minified;

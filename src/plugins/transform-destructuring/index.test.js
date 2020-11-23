@@ -28,9 +28,9 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"function x({
-			  'foo-bar': foo
+				'foo-bar': foo
 			}) {
-			  return foo;
+				return foo;
 			}"
 		`);
 		});
@@ -45,9 +45,9 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"function x({
-			  ['foo-bar' + 1]: foo
+				['foo-bar' + 1]: foo
 			}) {
-			  return foo;
+				return foo;
 			}"
 		`);
 		});
@@ -62,7 +62,7 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"var {
-			  0: a
+				0: a
 			} = x;"
 		`);
 		});
@@ -76,8 +76,8 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"var {
-			  0: b,
-			  1: c
+				0: b,
+				1: c
 			} = x;"
 		`);
 		});
@@ -91,8 +91,8 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"var {
-			  1: g,
-			  4: h
+				1: g,
+				4: h
 			} = x;"
 		`);
 		});
@@ -115,6 +115,14 @@ describe('transform-destructuring', () => {
 						e = _x3.slice(3);
 				`)
 			).toMatchInlineSnapshot(`"var [, d,, ...e] = x;"`);
+		});
+
+		it('should not transform split() when no properties are destructured', () => {
+			expect(b(dent`var b = a.slice(2);`)).toMatchInlineSnapshot(`"var b = a.slice(2);"`);
+			expect(b(dent`var a = x,b = a.slice(2);`)).toMatchInlineSnapshot(`
+			"var a = x,
+				b = a.slice(2);"
+		`);
 		});
 	});
 });

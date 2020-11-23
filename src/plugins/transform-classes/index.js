@@ -134,6 +134,7 @@ export default ({ types: t }) => {
 		let members = [];
 
 		// can be overwritten by _createSuper() call
+		// eslint-disable-next-line no-unused-vars
 		let reflectConstructedSuper;
 
 		const superClassInternal = fn.get('params.0');

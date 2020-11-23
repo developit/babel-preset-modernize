@@ -14,16 +14,24 @@ const options = {
 };
 
 export function dent(...args) {
-	const str = args[0].reduce((acc, str, index) => acc + args[index] + str);
-	const whitespace = str.match(/([\t ]*)[^\s\n]/m)[1];
-	return str.replace(new RegExp('^' + whitespace, 'gm'), '').trim().replace(/\t/g, '  ');
+	let str = args[0].reduce((acc, str, index) => acc + args[index] + str);
+	const m = str.match(/([\t ]*)[^\s\n]/m);
+	if (!m) return str;
+	const whitespace = m[1];
+	str = str.replace(new RegExp('^' + whitespace, 'gm'), '');
+	return str.trim(); //.replace(/\t/g, '  ');
 }
 
 export function babel(code, config) {
-	return transform(code, {
+	const out = transform(code, {
 		...options,
 		...config
-	}).code.replace(/\n\n+/g, '\n').trim();
+	}).code;
+	return out
+		.replace(/\n\n+/g, '\n')
+		.replace(/ {2}/g, '\t')
+		.replace(/,\n\t\t/g, ',\n\t')
+		.trim();
 }
 
 // export function compressedSize(code, options = {}) {

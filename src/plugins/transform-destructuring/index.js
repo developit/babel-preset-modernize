@@ -16,9 +16,10 @@ export default ({ types: t }) => {
 	/**
 	 * Detect Babel's objectWithoutProperties helper:
 	 *   _objectWithoutPropertiesLoose(props, ["x", "y", "z"])
+	 * @param {babel.NodePath} path
 	 */
 	function isWithoutPropertiesHelper(path, obj) {
-		if (!t.isCallExpression(path)) return false;
+		if (!path.isCallExpression()) return false;
 
 		const args = path.get('arguments');
 
@@ -222,13 +223,14 @@ export default ({ types: t }) => {
 
 		let restOffset,
 			isIterable = false,
+			onlyIfProperties = false,
 			properties = [];
 
 		const isValidRefPath = p => {
 			const parent = p.parentPath;
 			const root = parent.parentPath;
 
-			// NOTE: the following works, but is disabled because it is actually be necessary in practise.
+			// NOTE: the following works, but is disabled because it is actually unnecessary in practise.
 			/*
 			// aliased intermediary variable (used by array rest)
 			if (t.isVariableDeclarator(parent)) {
@@ -243,7 +245,10 @@ export default ({ types: t }) => {
             }
             else if (isSliceHelper(parent, path)) {
 			*/
-			if (isSliceHelper(parent, path)) {
+			// @TODO: the arity check here guards against some common cases, but this is still not fully safe.
+			// Eg: const x = y => y.slice(2);
+			if (isSliceHelper(parent, path) && root.node.arguments.length < 2) {
+				onlyIfProperties = true;
 				rest = root.parentPath;
 				isIterable = true;
 				restOffset = root.get('arguments.0').node.value;
@@ -262,6 +267,11 @@ export default ({ types: t }) => {
 		};
 		const isDestructure = referencePaths.every(isValidRefPath);
 		if (!isDestructure) return;
+
+		// slice() helper found, but no properties - safer to not assume this is a destructure:
+		if (onlyIfProperties && !properties.length) {
+			return;
+		}
 
 		const pattern = [];
 		const defined = [];

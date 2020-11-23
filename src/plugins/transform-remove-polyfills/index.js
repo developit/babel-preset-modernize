@@ -517,11 +517,11 @@ export default function transformRemovePolyfills({ types: t, template }) {
 		return t.functionExpression(null, args, tpl);
 	}
 
-	function tryResolve(path) {
-		const resolved = path.resolve();
-		if (resolved.node) return resolved;
-		return path;
-	}
+	// function tryResolve(path) {
+	// 	const resolved = path.resolve();
+	// 	if (resolved.node) return resolved;
+	// 	return path;
+	// }
 
 	let visitor;
 

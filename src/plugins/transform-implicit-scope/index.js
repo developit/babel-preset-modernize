@@ -13,7 +13,7 @@ export default ({ types: t }) => ({
 				// (function(){})
 				if (t.isExpressionStatement(root)) root = root.get('expression');
 				// ! function(){}()
-				if (t.isUnaryExpression(root)) root = root.get('expression');
+				if (t.isUnaryExpression(root)) root = root.get('argument');
 				// (...)()
 				if (t.isCallExpression(root)) {
 					const callee = root.get('callee');
