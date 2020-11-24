@@ -101,21 +101,43 @@ describe('transform-arguments', () => {
 			...CONFIG,
 			plugins: [[plugin, { loose: true }]]
 		};
-		expect(
-			babel(
-				dent`
-					function foo(a) {
-						a = a || {};
-						return a;
-					}
-				`,
-				conf
-			)
-		).toMatchInlineSnapshot(`
-		"function foo(a = {}) {
-			return a;
-		}"
-	`);
+
+		it('should process simple parameter reassignments', () => {
+			expect(
+				babel(
+					dent`
+						function foo(a) {
+							a = a || {};
+							return a;
+						}
+					`,
+					conf
+				)
+			).toMatchInlineSnapshot(`
+			"function foo(a = {}) {
+				return a;
+			}"
+		`);
+		});
+
+		it('should ignore parameter assignments', () => {
+			expect(
+				babel(
+					dent`
+					a(b => {
+						let c = (b = b || []).length;
+						return c;
+					});
+					`,
+					conf
+				)
+			).toMatchInlineSnapshot(`
+			"a((b = []) => {
+				let c = b.length;
+				return c;
+			});"
+		`);
+		});
 	});
 
 	it('should handle leading optional parameters', () => {

@@ -134,7 +134,11 @@ export default function transformArguments({ types: t }) {
 					const binding = right.scope.getBinding(arg.name);
 					if (binding.kind === 'param') {
 						binding.path.replaceWith(paramWithDefault(arg, right.node.right));
-						path.remove();
+						if (t.isExpressionStatement(path.parent)) {
+							path.remove();
+						} else {
+							path.replaceWith(arg);
+						}
 						return;
 					}
 				}
