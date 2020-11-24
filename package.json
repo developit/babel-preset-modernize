@@ -1,6 +1,6 @@
 {
   "name": "babel-preset-modernize",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "nothing to see here",
   "main": "dist/index.js",
   "scripts": {
