@@ -7,16 +7,61 @@
  * @returns {babel.PluginObj}
  */
 export default ({ types: t }) => {
+	/** @param {babel.NodePath} path @param {RegExp|string|((str: string)=>boolean)} toFind */
+	function functionHasOwnString(path, toFind) {
+		let has = false;
+		const predicate = typeof toFind === 'function' ? toFind : v => v && v.match(toFind);
+		path.traverse({
+			Function(p) {
+				p.skip();
+			},
+			StringLiteral(p) {
+				if (predicate(p.node.value)) {
+					has = true;
+					p.stop();
+				}
+			},
+			TemplateLiteral(p) {
+				const str = p.node.quasis.map(q => q.value).join('${}');
+				if (predicate(str)) {
+					has = true;
+					p.stop();
+				}
+			}
+		});
+		return has;
+	}
+
 	function isClassCallCheck(path) {
-		return path.node && /call a class as a function/.test(path.getSource());
+		return path.node && functionHasOwnString(path, /call a class as a function/);
 	}
 
 	function isPossibleConstructorReturn(path) {
-		return path.node && /super\(\) hasn't been called/.test(path.getSource());
+		return path.node && functionHasOwnString(path, /super\(\) hasn't been called/);
 	}
 
+	/** @param {babel.NodePath} path */
 	function isCreateSuperHelper(path) {
-		return path.node && /Reflect\.construct\(/.test(path.getSource());
+		// return path.node && functionHasOwnString(path, /Reflect\.construct\(/);
+		if (!path.node) return;
+		let found = false;
+		path.traverse({
+			CallExpression(p) {
+				// const callee = p.get('callee');
+				if (isMemberExpression(p.node.callee, 'Reflect', 'construct')) {
+					found = true;
+					p.stop();
+				}
+			},
+			Function(p) {
+				const bindingPaths = p.getBindingIdentifiers();
+				const binding = p.scope.getBinding(Object.keys(bindingPaths)[0]);
+				// *Do* descend into _inline_ functions (functions with binding contained within root path):
+				if (binding && path.isAncestor(binding.path)) return;
+				p.skip();
+			}
+		});
+		return found;
 	}
 
 	// function isInheritsHelper(path) {
@@ -565,7 +610,7 @@ export default ({ types: t }) => {
 					function getExternalReferences(binding) {
 						const parent = binding.path.node;
 						return binding.referencePaths.filter(p => {
-							return p.node !== parent && !p.findParent(p => p.node === parent || p.removed);
+							return p && p.node !== parent && !p.findParent(p => p.node === parent || p.removed);
 						});
 					}
 					function removeHelper(h) {
@@ -614,6 +659,10 @@ export default ({ types: t }) => {
 						});
 						id.scope.rename(id.node.name, 'this');
 						p = p.parentPath;
+						if (!path.node.arguments[1]) {
+							console.log(path.node.arguments[0]);
+							console.log(path.getSource());
+						}
 						p.replaceWith(
 							t.callExpression(t.identifier('super'), path.node.arguments[1].arguments.slice(1).map(t.clone))
 						);

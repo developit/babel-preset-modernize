@@ -266,4 +266,54 @@ describe('transform-classes', () => {
 		}"
 	`);
 	});
+
+	it('should handle minified constructorless classes', () => {
+		expect(
+			babel(
+				dent`
+					var l = function (e) {
+						function a() {
+							return function (e, a) {
+									if (!(e instanceof a)) throw new TypeError("Cannot call a class as a function")
+								}(this, a),
+								function (e, a) {
+									if (!e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+									return !a || "object" !== typeof a && "function" !== typeof a ? e : a
+								}(this, (a.__proto__ || Object.getPrototypeOf(a)).apply(this, arguments))
+						}
+						return function (e, a) {
+							if ("function" !== typeof a && null !== a) throw new TypeError("Super expression must either be null or a function, not " + typeof a);
+							e.prototype = Object.create(a && a.prototype, {
+								constructor: {
+									value: e,
+									enumerable: !1,
+									writable: !0,
+									configurable: !0
+								}
+							}), a && (Object.setPrototypeOf ? Object.setPrototypeOf(e, a) : e.__proto__ = a)
+						}(a, e), o(a, [{
+							key: "render",
+							value: function () {
+								var e = this.props,
+									a = e.name,
+									n = e.parentName,
+									t = e.props,
+									o = void 0 === t ? {} : t,
+									c = e.children,
+									p = e.components,
+									l = void 0 === p ? {} : p,
+									m = e.Layout,
+									d = e.layoutProps,
+									h = l[n + "." + a] || l[a] || i[a] || a;
+								return m ? r.default.createElement(m, s({
+									components: l
+								}, d), r.default.createElement(h, o, c)) : r.default.createElement(h, o, c)
+							}
+						}]), a
+					}(c.Component)
+				`,
+				CONFIG
+			)
+		).toMatchInlineSnapshot(`""`);
+	});
 });
