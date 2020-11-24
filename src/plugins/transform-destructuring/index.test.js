@@ -53,6 +53,17 @@ describe('transform-destructuring', () => {
 		});
 	});
 
+	it('should handle unfiltered destructured param', () => {
+		expect(
+			b(dent`
+				const k = e => c.b(z, Object.assign({}, e), c.b("a"));
+		`)
+		).toMatchInlineSnapshot(`
+		"const k = ({ ...e
+		}) => c.b(z, e, c.b(\\"a\\"));"
+	`);
+	});
+
 	describe('array-like destructuring', () => {
 		it('should transform single numeric destructured properties to object patterns', () => {
 			expect(

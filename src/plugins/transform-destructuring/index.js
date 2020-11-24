@@ -260,7 +260,7 @@ export default ({ types: t }) => {
 					return true;
 				}
 			} else if (isWithoutPropertiesHelper(parent, path)) {
-				rest = root;
+				rest = parent;
 				return true;
 			}
 			return false;
@@ -306,8 +306,14 @@ export default ({ types: t }) => {
 			if (t.isAssignmentExpression(rest)) {
 				return;
 			}
+
+			let paramId;
 			if (isIterable) {
-				pattern[restOffset || pattern.length] = t.restElement(t.clone(rest.node.id));
+				paramId = rest.node.id;
+				pattern[restOffset || pattern.length] = t.restElement(t.clone(paramId));
+			} else if (t.isCallExpression(rest) && isObjectAssign(rest.get('callee'))) {
+				paramId = rest.node.arguments[1];
+				pattern.push(t.restElement(t.clone(paramId)));
 			} else {
 				// find any additional "filtered out" properties and add them
 				const filteredOut = rest.get('init.arguments.1.elements');
@@ -319,9 +325,14 @@ export default ({ types: t }) => {
 						}
 					});
 				}
-				pattern.push(t.restElement(t.clone(rest.node.id)));
+				paramId = rest.node.id;
+				pattern.push(t.restElement(t.clone(paramId)));
 			}
-			rest.remove();
+			if (t.isVariableDeclaration(rest.parent) || t.isExpressionStatement(rest.parent)) {
+				rest.remove();
+			} else {
+				rest.replaceWith(t.clone(paramId));
+			}
 		}
 
 		if (isIterable) {
