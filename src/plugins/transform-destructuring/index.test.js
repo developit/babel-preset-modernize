@@ -28,7 +28,7 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"function x({
-				'foo-bar': foo
+				\\"foo-bar\\": foo
 			}) {
 				return foo;
 			}"
@@ -45,7 +45,7 @@ describe('transform-destructuring', () => {
 				`)
 			).toMatchInlineSnapshot(`
 			"function x({
-				['foo-bar' + 1]: foo
+				\\"foo-bar1\\": foo
 			}) {
 				return foo;
 			}"
@@ -61,6 +61,43 @@ describe('transform-destructuring', () => {
 		).toMatchInlineSnapshot(`
 		"const k = ({ ...e
 		}) => c.b(z, e, c.b(\\"a\\"));"
+	`);
+	});
+
+	it('should destructure static computed property access', () => {
+		expect(
+			b(dent`
+			const q = { a: 1, b: 2 };
+			let t = 'b';
+			let o = q[t];
+			console.log(o);
+		`)
+		).toMatchInlineSnapshot(`
+		"const {
+			b: o
+		} = {
+			a: 1,
+			b: 2
+		};
+		let t = 'b';
+		console.log(o);"
+	`);
+	});
+
+	it('should not destructure dynamic computed property access', () => {
+		expect(
+			b(dent`
+			const q = { a: 1, b: 2 };
+			let t = window.t;
+			let o = q[t];
+		`)
+		).toMatchInlineSnapshot(`
+		"const q = {
+			a: 1,
+			b: 2
+		};
+		let t = window.t;
+		let o = q[t];"
 	`);
 	});
 

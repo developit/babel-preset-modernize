@@ -284,11 +284,26 @@ export default ({ types: t }) => {
 				const resolved = prop.get('init.property').resolve().node;
 				if (t.isLiteral(resolved)) {
 					v = String(resolved.value);
-					// optimize static computed keys (a=_ref['404'] --> {'404': a})
 					computed = false;
 					// optimize away pointless computed keys (a=_ref['a'] --> {a})
-					if (/^[^a-z$_][a-z0-9$_]*$/gi.test(v)) {
+					if (/^[a-z0-9$_]*$/gi.test(v)) {
 						id = t.identifier(v);
+					} else {
+						id = t.stringLiteral(v);
+					}
+				} else {
+					const evaluated = prop.get('init.property').evaluate();
+					if (evaluated.confident) {
+						v = String(evaluated.value);
+						computed = false;
+						if (/^[a-z0-9$_]*$/gi.test(v)) {
+							id = t.identifier(v);
+						} else {
+							id = t.stringLiteral(v);
+						}
+					} else {
+						// Bailout: there is unknown computed property access into the object.
+						return;
 					}
 				}
 			}
