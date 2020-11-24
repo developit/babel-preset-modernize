@@ -1,10 +1,22 @@
+/**
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { promisify } from 'util';
 import fs, { mkdir } from 'fs';
-// import path from 'path';
 import { transform } from '@babel/core';
-// import gzipSize from 'gzip-size';
-// import terser from 'terser';
-// import chalk from 'chalk';
 
 const options = {
 	babelrc: false,
@@ -33,17 +45,6 @@ export function babel(code, config) {
 		.replace(/,\n\t\t/g, ',\n\t')
 		.trim();
 }
-
-// export function compressedSize(code, options = {}) {
-// 	return gzipSize(terser.minify(code, {
-// 		mangle: true,
-// 		compress: true,
-// 		sourceMap: false,
-// 		module: true,
-// 		ecma: 8,
-// 		...options
-// 	}).code);
-// }
 
 export const readdir = promisify(fs.readdir);
 export const readFile = promisify(fs.readFile);
