@@ -3,6 +3,7 @@
   "version": "0.0.5",
   "description": "nothing to see here",
   "main": "dist/index.js",
+  "repository": "developit/babel-preset-modernize",
   "scripts": {
     "start": "concurrently -r 'npm:watch:* -s'",
     "build": "babel src --minified --no-comments -d dist --ignore '**/*.test.js' && npm run -s build:standalone",
