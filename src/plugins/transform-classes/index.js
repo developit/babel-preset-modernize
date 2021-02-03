@@ -29,6 +29,7 @@ export default ({ types: t }) => {
 		const predicate = typeof toFind === 'function' ? toFind : v => v && v.match(toFind);
 		path.traverse({
 			Function(p) {
+				if (p.node === path.node) return;
 				p.skip();
 			},
 			StringLiteral(p) {
@@ -55,6 +56,10 @@ export default ({ types: t }) => {
 	function isPossibleConstructorReturn(path) {
 		return path.node && functionHasOwnString(path, /super\(\) hasn't been called/);
 	}
+
+	// function isInheritsHelper(path) {
+	// 	return path.node && functionHasOwnString(path, /Super expression must be either null/);
+	// }
 
 	/** @param {babel.NodePath} path */
 	function isCreateSuperHelper(path) {
@@ -166,6 +171,29 @@ export default ({ types: t }) => {
 	}
 
 	/** @param {babel.NodePath} path */
+	function canBeArrowFunction(path) {
+		let can = true;
+		path.traverse({
+			Function(p) {
+				if (p.node === path.node) return;
+				p.skip();
+			},
+			ThisExpression(p) {
+				if (p.get('isInjected') === true) return;
+				can = false;
+				p.stop();
+			},
+			Identifier(p) {
+				if (p.node.name === 'arguments') {
+					can = false;
+					p.stop();
+				}
+			}
+		});
+		return can;
+	}
+
+	/** @param {babel.NodePath} path */
 	function looseResolve(path) {
 		let resolved = path.resolve();
 		if (resolved.isIdentifier()) {
@@ -178,11 +206,34 @@ export default ({ types: t }) => {
 		return resolved;
 	}
 
+	// getFunctionParent(), but skip over Arrow functions
+	function getNonArrowFunctionParent(path) {
+		const parent = path.getFunctionParent();
+		if (parent.isArrowFunctionExpression()) return getNonArrowFunctionParent(parent);
+		return parent;
+	}
+
+	function getRootExpressions(path, assignmentRhs) {
+		function walk(acc, p) {
+			if (Array.isArray(p)) for (const v of p) walk(acc, v);
+			else if (p.isExpressionStatement()) walk(acc, p.get('expression'));
+			else if (p.isSequenceExpression()) walk(acc, p.get('expressions'));
+			else if (p.isBlockStatement()) walk(acc, p.get('body'));
+			else if (p.isReturnStatement()) walk(acc, p.get('argument'));
+			else if (assignmentRhs && p.isAssignmentExpression()) walk(acc, p.get('right'));
+			else acc.push(p);
+			return acc;
+		}
+		return walk([], path);
+	}
+
 	function processConstructor(path, state) {
 		const fn = path.parentPath.getFunctionParent();
 		if (!fn) return;
-		const ret = getReturnedBindingPath(fn);
+		let originalReturn = getReturnedBindingPath(fn);
+		let ret = originalReturn && getRootExpressions([originalReturn]).pop();
 		if (!ret) return;
+		ret = ret.resolve();
 		//if (!t.isNodesEquivalent(ret.node.argument, path.node.id)) {
 		if (!t.isNodesEquivalent(ret.node, path.node)) {
 			return;
@@ -200,9 +251,7 @@ export default ({ types: t }) => {
 
 		const superClassInternal = fn.get('params.0');
 
-		fn.get('body.body').forEach(p => {
-			if (p.isExpressionStatement()) p = p.get('expression');
-
+		getRootExpressions(fn.get('body.body')).forEach(p => {
 			if (p.isAssignmentExpression()) {
 				const lhs = p.get('left');
 				if (lhs.isMemberExpression()) {
@@ -228,6 +277,9 @@ export default ({ types: t }) => {
 						}
 					}
 				}
+				// else {
+				// 	console.log(lhs.getSource());
+				// }
 			}
 
 			if (p.isVariableDeclaration()) {
@@ -242,6 +294,7 @@ export default ({ types: t }) => {
 			if (!p.isCallExpression()) return;
 			const args = p.get('arguments');
 			if (args.length < 2) return;
+
 			if (!t.isNodesEquivalent(args[0].node, path.node.id)) return;
 
 			if (superClassInternal && args.length === 2 && t.isNodesEquivalent(args[1].node, superClassInternal.node)) {
@@ -294,14 +347,16 @@ export default ({ types: t }) => {
 			} else if (helper) {
 				//console.log(p.node.callee);
 				const binding = p.scope.getBinding(p.node.callee.name);
-				binding.dereference();
-				state.helpers.add(binding.path);
+				if (binding) {
+					binding.dereference();
+					state.helpers.add(binding.path);
+				}
 			}
 		});
 
 		let superClass = inv.get('arguments.0');
 		// Special-case: remove _extendableBuiltIn() helper
-		if (superClass.isCallExpression()) {
+		if (superClass && superClass.isCallExpression()) {
 			const callee = superClass.get('callee').resolve();
 			if (callee && callee.isFunction()) {
 				const proxyCtor = getReturnedBindingPath(callee);
@@ -319,8 +374,19 @@ export default ({ types: t }) => {
 			}
 		}
 
-		path.get('body.body').every(p => {
-			if (p.isExpressionStatement()) p = p.get('expression');
+		// process the constructor body:
+
+		// Find constructor return sequence expression and inline into body
+		// TODO: this is only valid if the return value matches ES class semantics (isn't custom)
+		const ctorReturn = path.get('body.body').find(t.isReturnStatement);
+		if (ctorReturn) {
+			const paths = getRootExpressions([ctorReturn]);
+			ctorReturn.replaceWithMultiple(paths.map(p => t.expressionStatement(p.node)));
+		}
+
+		const bindingsToDissolve = new Set();
+
+		getRootExpressions(path.get('body.body')).forEach(p => {
 			let rep = p;
 			if (t.isReturnStatement(rep)) {
 				rep = rep.get('argument');
@@ -328,14 +394,73 @@ export default ({ types: t }) => {
 			if (t.isLogicalExpression(rep) && rep.node.operator === '||' && t.isThisExpression(rep.node.right)) {
 				rep = rep.get('left');
 			}
-			if (!t.isCallExpression(rep)) return true;
+			let b;
+			while (t.isAssignmentExpression(rep) && t.isIdentifier(rep.get('left'))) {
+				b = rep.get('left');
+				rep = rep.get('right');
+			}
+
+			// Convert "class property method initializers" (arrow function class fields):
+			//   var o=this;o.method = function() { return o.props }
+			// ...back to arrow functions within the constructor:
+			//   this.method = () => { return this.props }
+			if (t.isAssignmentExpression(rep) && t.isMemberExpression(rep.get('left')) && t.isFunction(rep.get('right'))) {
+				const obj = rep.get('left.object').resolve();
+				const isThis =
+					t.isThisExpression(obj) ||
+					(t.isCallExpression(obj) && isPossibleConstructorReturn(obj.get('callee').resolve()));
+				if (isThis) {
+					const fn = rep.get('right');
+					if (!t.isArrowFunctionExpression(fn) && canBeArrowFunction(fn)) {
+						const arrow = t.arrowFunctionExpression(fn.node.params, fn.node.body);
+						arrow.async = fn.node.async;
+						arrow.generator = fn.node.generator;
+						fn.replaceWith(arrow);
+					}
+					return;
+				}
+			}
+
+			if (!t.isCallExpression(rep)) return;
+
+			const callee = rep.get('callee').resolve();
+			if (isPossibleConstructorReturn(callee)) {
+				state.helpers.add(callee);
+				rep = rep.get('arguments.1');
+
+				// we collected the binding previously if this was a (nested) assignment:
+				const binding = b && b.scope.getBinding(b.node.name);
+
+				// for an assignment, classCallCheck returns the class instance.
+				// any references to its return value can be replaced with `this`:
+				if (binding) {
+					if (
+						binding.constantViolations.length === 1 &&
+						t.isNodesEquivalent(binding.constantViolations[0].node, b.parent)
+					) {
+						const _this = t.thisExpression();
+						binding.path.get('init').replaceWith(_this);
+						binding.setValue(_this);
+						binding.constantViolations.length = 0;
+						binding.constant = true;
+						// we'll remove the intermediary var later (to avoid deopting arrow function reversal):
+						bindingsToDissolve.add(binding);
+					}
+				} else {
+					// not an assignment, just a bare _possibleConstructorReturn()
+					// @TODO: this doesn't properly dereferences the arguments
+					p.remove();
+					return;
+				}
+			}
+
 			const sup = checkSuperCall(rep, superClassInternal);
 			if (sup.helper) {
 				// super call used _createSuper() helper, mark it for removal:
 				state.helpers.add(sup.helper);
 			}
 			// not a super call
-			if (!sup) return true;
+			if (!sup) return;
 			if (sup.apply && sup.args.length === 1 && isNamedIdentifier(sup.args[0].node, 'arguments')) {
 				sup.args = [];
 			}
@@ -347,8 +472,8 @@ export default ({ types: t }) => {
 				const id = rep.parentPath.get('id');
 				// const _self = _super.apply(this,arguments); ... return _self;
 				for (const refPath of id.scope.getBinding(id.node.name).referencePaths) {
-					const fn = refPath.getFunctionParent().node;
-					if (fn !== path.node) {
+					const fn = refPath.getFunctionParent();
+					if (fn.node !== path.node) {
 						preserveName = id.node.name;
 					} else if (t.isReturnStatement(refPath.parent)) {
 						refPath.parentPath.remove();
@@ -386,6 +511,32 @@ export default ({ types: t }) => {
 				...after
 			]);
 		});
+
+		// replace bindings that are aliases of `this` within the constructor:
+		bindingsToDissolve.forEach(binding => {
+			binding.referencePaths = binding.referencePaths.filter(refPath => {
+				if (getNonArrowFunctionParent(refPath) === path) {
+					refPath.replaceWith(t.thisExpression());
+					binding.dereference();
+					return false;
+				}
+				return true;
+			});
+
+			if (binding.referencePaths.length === 0) {
+				binding.path.remove();
+			}
+		});
+
+		// // Terser can handle this
+		// const constructorScope = path.get('body').scope;
+		// constructorScope.crawl();
+		// for (const bindingName in constructorScope.bindings) {
+		// 	const binding = constructorScope.bindings[bindingName];
+		// 	if (binding.kind === 'var' && !binding.referenced) {
+		// 		binding.path.remove();
+		// 	}
+		// }
 
 		const id = t.clone(path.node.id);
 		const superD = superClass && superClass.node;
@@ -759,7 +910,7 @@ export default ({ types: t }) => {
 					t.expressionStatement(t.callExpression(t.identifier('super'), sup.args.map(a => a.node))),
 					...after
 				]);
-                */
+				*/
 
 				processConstructor(ctorParent, state);
 			},
