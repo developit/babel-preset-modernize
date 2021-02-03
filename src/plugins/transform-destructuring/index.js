@@ -347,7 +347,21 @@ export default ({ types: t }) => {
 				pattern.push(t.restElement(t.clone(paramId)));
 			} else {
 				// find any additional "filtered out" properties and add them
-				const filteredOut = rest.get('init.arguments.1.elements');
+				let parent = rest;
+				if (t.isCallExpression(rest)) {
+					parent = rest.parentPath;
+					if (t.isVariableDeclarator(parent)) {
+						paramId = parent.node.id;
+					} else if (t.isAssignmentExpression(parent)) {
+						paramId = parent.node.left;
+					}
+				} else if (t.isVariableDeclarator(rest)) {
+					rest = rest.get('init');
+				} else if (t.isAssignmentExpression(rest)) {
+					paramId = parent.node.left;
+					rest = parent.get('right');
+				}
+				const filteredOut = rest.get('arguments.1.elements');
 				if (Array.isArray(filteredOut) && filteredOut.length) {
 					filteredOut.forEach(p => {
 						const prop = p.node.value;
@@ -356,10 +370,11 @@ export default ({ types: t }) => {
 						}
 					});
 				}
-				paramId = rest.node.id;
 				pattern.push(t.restElement(t.clone(paramId)));
 			}
-			if (t.isVariableDeclaration(rest.parent) || t.isExpressionStatement(rest.parent)) {
+			if (t.isVariableDeclarator(rest.parent)) {
+				rest.parentPath.remove();
+			} else if (t.isVariableDeclaration(rest.parent) || t.isExpressionStatement(rest.parent)) {
 				rest.remove();
 			} else {
 				rest.replaceWith(t.clone(paramId));
