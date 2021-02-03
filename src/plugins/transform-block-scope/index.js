@@ -22,8 +22,18 @@
  * @returns {babel.PluginObj}
  */
 export default function({}) {
+	function mightExecuteBefore(path, before) {
+		if (path.willIMaybeExecuteBefore(before) === false) return false;
+		let p = before.parentPath;
+		if (path.willIMaybeExecuteBefore(p) === false) return false;
+		// var x = function(){x}
+		let fn = path.getFunctionParent();
+		if (p.isVariableDeclarator() && before.parentKey === 'id' && fn === p.get('init')) return false;
+		//if (p.isVariableDeclarator() && before.parentKey === 'id' && p.get('init').isDescendant(p)) {
+		return true;
+	}
 	return {
-		name: 'transform-block-scpe',
+		name: 'transform-block-scope',
 		visitor: {
 			VariableDeclaration(path) {
 				if (path.node.kind !== 'var') return;
@@ -36,12 +46,13 @@ export default function({}) {
 					if (!b || !b.constant) return;
 					// TDZ violations
 					for (const ref of b.referencePaths) {
-						if (ref !== p && ref.willIMaybeExecuteBefore(p)) {
+						if (ref !== p && mightExecuteBefore(ref, p)) {
 							return;
 						}
 					}
 				}
 				path.node.kind = 'let';
+				// path.set('kind', 'let');
 			}
 		}
 	};
