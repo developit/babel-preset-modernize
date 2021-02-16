@@ -947,10 +947,10 @@ export default function({ types: t }) {
 		visitor: {
 			Program(path, state) {
 				state = state || {};
-				const { enter, exit } = visitor.Program;
-				enter(path, state);
-				path.traverse(visitor, state);
-				exit(path, state);
+				const { Program, ...v } = visitor;
+				Program.enter(path, state);
+				path.traverse(v, state);
+				Program.exit(path, state);
 			}
 		}
 	};
