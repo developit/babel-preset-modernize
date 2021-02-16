@@ -263,7 +263,7 @@ export default ({ types: t }) => {
 			*/
 			// @TODO: the arity check here guards against some common cases, but this is still not fully safe.
 			// Eg: const x = y => y.slice(2);
-			if (isSliceHelper(parent, path) && root.node.arguments.length < 2) {
+			if (t.isCallExpression(root) && isSliceHelper(parent, path) && root.node.arguments.length < 2) {
 				onlyIfProperties = true;
 				rest = root.parentPath;
 				isIterable = true;
@@ -276,6 +276,7 @@ export default ({ types: t }) => {
 					return true;
 				}
 			} else if (isWithoutPropertiesHelper(parent, path)) {
+				// @TODO: should be verifying that this is a CallExpression?
 				rest = parent;
 				return true;
 			}
