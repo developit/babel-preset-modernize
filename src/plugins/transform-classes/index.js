@@ -666,273 +666,284 @@ export default ({ types: t }) => {
 		}
 	}
 
-	return {
-		name: 'transform-infer-classes',
-		visitor: {
-			Identifier(path) {
-				if (isNamedIdentifier(path.node, 'arguments') && t.isMemberExpression(path.parent)) {
-					const fn = path.getFunctionParent();
-					const parent = path.parentPath;
-					let decl = parent.parentPath;
-					let fallback;
-					const key = parent.get('property').evaluate().value;
-					if (key === 'length') return;
-					if (!t.isVariableDeclarator(decl)) {
-						const r = isOptionalParamCheck(parent, key);
-						if (!r) {
-							return false;
-						}
-						({ decl, fallback } = r);
+	const visitor = {
+		Identifier(path) {
+			if (isNamedIdentifier(path.node, 'arguments') && t.isMemberExpression(path.parent)) {
+				const fn = path.getFunctionParent();
+				const parent = path.parentPath;
+				let decl = parent.parentPath;
+				let fallback;
+				const key = parent.get('property').evaluate().value;
+				// arguments.length or arguments[<unknown>]
+				if (key === 'length' || !key) return;
+				if (!t.isVariableDeclarator(decl)) {
+					const r = isOptionalParamCheck(parent, key);
+					if (!r) {
+						return false;
 					}
-					if (t.isVariableDeclarator(decl)) {
-						const name = t.clone(decl.node.id);
-						const params = fn.get('params');
-						let param = name;
-						if (fallback) {
-							param = t.assignmentPattern(param, fallback);
-						}
-						if (key === params.length) {
-							fn.pushContainer('params', param);
+					({ decl, fallback } = r);
+				}
+				if (t.isVariableDeclarator(decl)) {
+					const name = t.clone(decl.node.id);
+					const params = fn.get('params');
+					let param = name;
+					if (fallback) {
+						param = t.assignmentPattern(param, fallback);
+					}
+					if (key === params.length) {
+						fn.pushContainer('params', param);
+					} else {
+						fn.node.params[key] = param;
+					}
+					decl.remove();
+				}
+				return;
+			}
+
+			if (!isNamedIdentifier(path.node, 'exports') || path.scope.getBinding('exports')) return;
+			let parent = path.parentPath;
+
+			if (parent && parent.isCallExpression() && path.parentKey === 'arguments') {
+				if (isMemberExpression(parent.node.callee, 'Object', 'defineProperty')) {
+					const key = parent.get('arguments.1');
+					if (!t.isStringLiteral(key)) throw Error(`Unknown defineProperty call: ${parent.getSource}`);
+					const desc = parent.get('arguments.2.properties').find(p => isNamedIdentifier(p.node.key, 'get'));
+					if (!desc) return;
+					const ret = getReturnedBindingPath(desc.get('value'));
+					if (t.isExpressionStatement(parent.parent)) {
+						parent = parent.parentPath;
+					}
+					console.log('TODO: implement definePropery() reconstruction', ret);
+					// parent.replaceWith(t.exportNamedDeclaration(
+					// 	t.variableDeclaration(
+					// 		'let',
+					// 		[
+					// 			t.variableDeclarator(
+					// 				t.identifier(key.node.value),
+					// 				ret.node
+					// 			)
+					// 		]
+					// 	)
+					// ));
+				}
+				return;
+			}
+
+			//if (!t.isMemberExpression(parent) || path.parentKey!=='object' || !t.isIdentifier(parent.node.property)) return;
+			if (parent.isMemberExpression() && path.parentKey === 'object' && t.isIdentifier(parent.node.property)) {
+				const assign = parent.parentPath;
+
+				// const ident = parent.node.property.name;
+				// if (assign.node && t.isAssignmentExpression(assign)) {
+				// 	if (!t.isAssignmentExpression(assign.node.right)) {
+				// 		console.log(assign.parentPath.parent)
+				// 		if (t.isVariableDeclarator(assign.parent) && isNamedIdentifier(assign.parent.id, ident)) {
+				// 			const parent = assign.parentPath;
+				// 			parent.skip();
+				// 			parent.replaceWith(t.exportNamedDeclaration(
+				// 				assign.parentPath.parent
+				// 			));
+				// 		}
+				// 		return;
+				// 	}
+				// }
+
+				// I don't remember what this was for
+				let a = assign;
+				while (a.node && a.isAssignmentExpression()) {
+					a = a.get('right');
+					if (isNamedIdentifier(a.node, 'undefined')) {
+						let parent = a.parentPath;
+						if (parent && parent.isExpressionStatement()) {
+							parent.remove();
+						} else if (parent && parent.isAssignmentExpression()) {
+							assign.replaceWith(a.node.right);
 						} else {
-							fn.node.params[key] = param;
+							assign.remove();
 						}
-						decl.remove();
+						return;
 					}
-					return;
+					//path.remove();
 				}
-
-				if (!isNamedIdentifier(path.node, 'exports') || path.scope.getBinding('exports')) return;
-				let parent = path.parentPath;
-
-				if (parent && parent.isCallExpression() && path.parentKey === 'arguments') {
-					if (isMemberExpression(parent.node.callee, 'Object', 'defineProperty')) {
-						const key = parent.get('arguments.1');
-						if (!t.isStringLiteral(key)) throw Error(`Unknown defineProperty call: ${parent.getSource}`);
-						const desc = parent.get('arguments.2.properties').find(p => isNamedIdentifier(p.node.key, 'get'));
-						if (!desc) return;
-						const ret = getReturnedBindingPath(desc.get('value'));
-						if (t.isExpressionStatement(parent.parent)) {
-							parent = parent.parentPath;
-						}
-						console.log('TODO: implement definePropery() reconstruction', ret);
-						// parent.replaceWith(t.exportNamedDeclaration(
-						// 	t.variableDeclaration(
-						// 		'let',
-						// 		[
-						// 			t.variableDeclarator(
-						// 				t.identifier(key.node.value),
-						// 				ret.node
-						// 			)
-						// 		]
-						// 	)
-						// ));
-					}
-					return;
-				}
-
-				//if (!t.isMemberExpression(parent) || path.parentKey!=='object' || !t.isIdentifier(parent.node.property)) return;
-				if (parent.isMemberExpression() && path.parentKey === 'object' && t.isIdentifier(parent.node.property)) {
-					const assign = parent.parentPath;
-
-					// const ident = parent.node.property.name;
-					// if (assign.node && t.isAssignmentExpression(assign)) {
-					// 	if (!t.isAssignmentExpression(assign.node.right)) {
-					// 		console.log(assign.parentPath.parent)
-					// 		if (t.isVariableDeclarator(assign.parent) && isNamedIdentifier(assign.parent.id, ident)) {
-					// 			const parent = assign.parentPath;
-					// 			parent.skip();
-					// 			parent.replaceWith(t.exportNamedDeclaration(
-					// 				assign.parentPath.parent
-					// 			));
-					// 		}
-					// 		return;
-					// 	}
-					// }
-
-					// I don't remember what this was for
-					let a = assign;
-					while (a.node && a.isAssignmentExpression()) {
-						a = a.get('right');
-						if (isNamedIdentifier(a.node, 'undefined')) {
-							let parent = a.parentPath;
-							if (parent && parent.isExpressionStatement()) {
-								parent.remove();
-							} else if (parent && parent.isAssignmentExpression()) {
-								assign.replaceWith(a.node.right);
-							} else {
-								assign.remove();
-							}
-							return;
-						}
-						//path.remove();
-					}
-				}
+			}
+		},
+		Program: {
+			enter(path, state) {
+				state.helpers = new Set();
 			},
-			Program: {
-				enter(path, state) {
-					state.helpers = new Set();
-				},
-				exit(path, state) {
-					let bindings = path.scope.bindings;
-					function getExternalReferences(binding) {
-						const parent = binding.path.node;
-						return binding.referencePaths.filter(p => {
-							return p && p.node !== parent && !p.findParent(p => p.node === parent || p.removed);
-						});
+			exit(path, state) {
+				let bindings = path.scope.bindings;
+				function getExternalReferences(binding) {
+					const parent = binding.path.node;
+					return binding.referencePaths.filter(p => {
+						return p && p.node !== parent && !p.findParent(p => p.node === parent || p.removed);
+					});
+				}
+				function removeHelper(h) {
+					// we may have removed this helper already via cascade
+					if (h.removed) return;
+					const idents = h.getOuterBindingIdentifierPaths();
+					for (let name in idents) {
+						h.scope.removeBinding(name);
 					}
-					function removeHelper(h) {
-						// we may have removed this helper already via cascade
-						if (h.removed) return;
-						const idents = h.getOuterBindingIdentifierPaths();
-						for (let name in idents) {
-							h.scope.removeBinding(name);
-						}
-						// if (!h.find(p => p.removed)) {
-						// remove() fails if the container is falsey, but there's no nice way to check for that case.
-						try {
-							h.remove();
-						} catch (e) {}
-						for (const name in bindings) {
-							const b = path.scope.getBinding(name);
-							if (!b) continue;
-							const refs = getExternalReferences(b);
-							// remove references originating from this helper:
-							let remaining = refs.length;
-							for (const ref of refs) {
-								if (ref.isDescendant(h)) {
-									b.dereference();
-									remaining--;
-								}
+					// if (!h.find(p => p.removed)) {
+					// remove() fails if the container is falsey, but there's no nice way to check for that case.
+					try {
+						h.remove();
+					} catch (e) {}
+					for (const name in bindings) {
+						const b = path.scope.getBinding(name);
+						if (!b) continue;
+						const refs = getExternalReferences(b);
+						// remove references originating from this helper:
+						let remaining = refs.length;
+						for (const ref of refs) {
+							if (ref.isDescendant(h)) {
+								b.dereference();
+								remaining--;
 							}
-							// if there are no references, remove that helper too:
-							if (!remaining) removeHelper(b.path);
 						}
-					}
-					state.helpers.forEach(removeHelper);
-				}
-			},
-			CallExpression(path, state) {
-				const callee = path.get('callee').resolve();
-				if (isPossibleConstructorReturn(callee)) {
-					state.helpers.add(callee);
-					let p = path.parentPath;
-					if (t.isVariableDeclarator(p)) {
-						const ident = p.get('id').getOuterBindingIdentifierPaths();
-						const id = ident[Object.keys(ident)[0]];
-						const b = id.scope.getBinding(id.node.name);
-						b.referencePaths.forEach(rp => {
-							const rpp = rp.parentPath;
-							if (rpp && rpp.isReturnStatement()) rpp.remove();
-						});
-						id.scope.rename(id.node.name, 'this');
-						p = p.parentPath;
-						if (!path.node.arguments[1]) {
-							console.log(path.node.arguments[0]);
-							console.log(path.getSource());
-						}
-						p.replaceWith(
-							t.callExpression(t.identifier('super'), path.node.arguments[1].arguments.slice(1).map(t.clone))
-						);
-					}
-					return;
-				}
-				if (isClassCallCheck(callee)) {
-					state.helpers.add(callee);
-					const ctor = path.getFunctionParent();
-					path.remove();
-					processConstructor(ctor, state);
-					return;
-				}
-
-				// structural inference based on super call
-				let ctorParent = path.getFunctionParent();
-				if (!ctorParent) return;
-
-				let outer = ctorParent.parentPath;
-				if (t.isBlockStatement(outer)) outer = outer.parentPath;
-				if (!t.isFunctionExpression(outer)) return;
-
-				// (function(){function P(){}return P;})()
-				const ret = getReturnedBindingPath(outer);
-				if (!ret) return;
-				if (!t.isNodesEquivalent(ctorParent.node, ret.node)) return;
-				if (!t.isCallExpression(outer.parent)) return;
-
-				const sup = checkSuperCall(path, outer.get('params.0'));
-				if (!sup) return;
-
-				/*
-				if (sup.apply && sup.args.length === 1 && isNamedIdentifier(sup.args[0].node, 'arguments')) {
-					sup.args = [];
-				}
-				let rep = path;
-				if (t.isLogicalExpression(rep.parent) && rep.parent.operator === '||' && t.isThisExpression(rep.parent.right)) {
-					rep = rep.parentPath;
-				}
-				if (t.isReturnStatement(rep.parent)) {
-					rep = rep.parentPath;
-				}
-				let before = [],
-					after = [];
-				let preserveName, kind;
-				if (t.isVariableDeclarator(rep.parent) && rep.parentKey === 'init') {
-					const id = rep.parentPath.get('id');
-					// const _self = _super.apply(this,arguments); ... return _self;
-					for (const p of id.scope.getBinding(id.node.name).referencePaths) {
-						const fn = p.getFunctionParent().node;
-						if (fn !== ctorParent.node) {
-							preserveName = id.node.name;
-						} else if (t.isReturnStatement(p.parent)) {
-							p.parentPath.remove();
-						} else {
-							p.replaceWith(t.thisExpression());
-						}
-					}
-					// rename _self to this
-					//id.scope.rename(id.node.name, 'this');
-					rep = rep.parentPath;
-					if (t.isVariableDeclaration(rep.parent)) {
-						kind = rep.parent.kind;
-						const prev = rep.getAllPrevSiblings();
-						if (prev.length) before.push(t.variableDeclaration(kind, before));
-						const next = rep.getAllNextSiblings();
-						if (next.length) after.push(t.variableDeclaration(kind, after));
-						rep = rep.parentPath;
+						// if there are no references, remove that helper too:
+						if (!remaining) removeHelper(b.path);
 					}
 				}
-				if (preserveName) {
-					after.unshift(
-						t.variableDeclaration(kind || 'var', [t.variableDeclarator(t.identifier(preserveName), t.thisExpression())])
+				state.helpers.forEach(removeHelper);
+			}
+		},
+		CallExpression(path, state) {
+			const callee = path.get('callee').resolve();
+			if (isPossibleConstructorReturn(callee)) {
+				state.helpers.add(callee);
+				let p = path.parentPath;
+				if (t.isVariableDeclarator(p)) {
+					const ident = p.get('id').getOuterBindingIdentifierPaths();
+					const id = ident[Object.keys(ident)[0]];
+					const b = id.scope.getBinding(id.node.name);
+					b.referencePaths.forEach(rp => {
+						const rpp = rp.parentPath;
+						if (rpp && rpp.isReturnStatement()) rpp.remove();
+					});
+					id.scope.rename(id.node.name, 'this');
+					p = p.parentPath;
+					if (!path.node.arguments[1]) {
+						console.log(path.node.arguments[0]);
+						console.log(path.getSource());
+					}
+					p.replaceWith(
+						t.callExpression(t.identifier('super'), path.node.arguments[1].arguments.slice(1).map(t.clone))
 					);
 				}
-				rep.replaceWithMultiple([
-					...before,
-					t.expressionStatement(t.callExpression(t.identifier('super'), sup.args.map(a => a.node))),
-					...after
-				]);
-				*/
+				return;
+			}
+			if (isClassCallCheck(callee)) {
+				state.helpers.add(callee);
+				const ctor = path.getFunctionParent();
+				path.remove();
+				processConstructor(ctor, state);
+				return;
+			}
 
-				processConstructor(ctorParent, state);
-			},
-			BinaryExpression(path) {
-				if (path.node.operator === 'instanceof') {
-					let outcome = true;
-					let root = path.parentPath;
-					if (root && root.isUnaryExpression() && root.node.operator === '!') {
-						outcome = false;
-						root = root.parentPath;
-					}
-					if (!isNamedIdentifier(path.node.left, 'this')) return;
-					const fn = path.getFunctionParent();
-					if (!fn) return;
-					if (!t.nodesIsEquivalent(path.node.right, fn.node.id)) return;
-					if (outcome) {
-						root.replaceWith(root.node.block);
+			// structural inference based on super call
+			let ctorParent = path.getFunctionParent();
+			if (!ctorParent) return;
+
+			let outer = ctorParent.parentPath;
+			if (t.isBlockStatement(outer)) outer = outer.parentPath;
+			if (!t.isFunctionExpression(outer)) return;
+
+			// (function(){function P(){}return P;})()
+			const ret = getReturnedBindingPath(outer);
+			if (!ret) return;
+			if (!t.isNodesEquivalent(ctorParent.node, ret.node)) return;
+			if (!t.isCallExpression(outer.parent)) return;
+
+			const sup = checkSuperCall(path, outer.get('params.0'));
+			if (!sup) return;
+
+			/*
+			if (sup.apply && sup.args.length === 1 && isNamedIdentifier(sup.args[0].node, 'arguments')) {
+				sup.args = [];
+			}
+			let rep = path;
+			if (t.isLogicalExpression(rep.parent) && rep.parent.operator === '||' && t.isThisExpression(rep.parent.right)) {
+				rep = rep.parentPath;
+			}
+			if (t.isReturnStatement(rep.parent)) {
+				rep = rep.parentPath;
+			}
+			let before = [],
+				after = [];
+			let preserveName, kind;
+			if (t.isVariableDeclarator(rep.parent) && rep.parentKey === 'init') {
+				const id = rep.parentPath.get('id');
+				// const _self = _super.apply(this,arguments); ... return _self;
+				for (const p of id.scope.getBinding(id.node.name).referencePaths) {
+					const fn = p.getFunctionParent().node;
+					if (fn !== ctorParent.node) {
+						preserveName = id.node.name;
+					} else if (t.isReturnStatement(p.parent)) {
+						p.parentPath.remove();
 					} else {
-						root.remove();
+						p.replaceWith(t.thisExpression());
 					}
+				}
+				// rename _self to this
+				//id.scope.rename(id.node.name, 'this');
+				rep = rep.parentPath;
+				if (t.isVariableDeclaration(rep.parent)) {
+					kind = rep.parent.kind;
+					const prev = rep.getAllPrevSiblings();
+					if (prev.length) before.push(t.variableDeclaration(kind, before));
+					const next = rep.getAllNextSiblings();
+					if (next.length) after.push(t.variableDeclaration(kind, after));
+					rep = rep.parentPath;
+				}
+			}
+			if (preserveName) {
+				after.unshift(
+					t.variableDeclaration(kind || 'var', [t.variableDeclarator(t.identifier(preserveName), t.thisExpression())])
+				);
+			}
+			rep.replaceWithMultiple([
+				...before,
+				t.expressionStatement(t.callExpression(t.identifier('super'), sup.args.map(a => a.node))),
+				...after
+			]);
+			*/
+
+			processConstructor(ctorParent, state);
+		},
+		BinaryExpression(path) {
+			if (path.node.operator === 'instanceof') {
+				let outcome = true;
+				let root = path.parentPath;
+				if (root && root.isUnaryExpression() && root.node.operator === '!') {
+					outcome = false;
+					root = root.parentPath;
+				}
+				if (!isNamedIdentifier(path.node.left, 'this')) return;
+				const fn = path.getFunctionParent();
+				if (!fn) return;
+				if (!t.nodesIsEquivalent(path.node.right, fn.node.id)) return;
+				if (outcome) {
+					root.replaceWith(root.node.block);
+				} else {
+					root.remove();
 				}
 			}
 		}
 	};
-};
+
+	return {
+		name: 'transform-infer-classes',
+		visitor: {
+			Program(path, state) {
+				state = state || {};
+				const { enter, exit } = visitor.Program;
+				enter(path, state);
+				path.traverse(visitor, state);
+				exit(path, state);
+			}
+		}
+	};
+}
