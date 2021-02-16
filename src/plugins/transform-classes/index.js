@@ -22,7 +22,7 @@
  * @param {babel} api
  * @returns {babel.PluginObj}
  */
-export default ({ types: t }) => {
+export default function({ types: t }) {
 	/** @param {babel.NodePath} path @param {RegExp|string|((str: string)=>boolean)} toFind */
 	function functionHasOwnString(path, toFind) {
 		let has = false;
@@ -545,7 +545,15 @@ export default ({ types: t }) => {
 			params[i] = path.node.params[i] || path.scope.generateUidIdentifier();
 		}
 		// Inject super() call, but not if it's a pointless constructor that just forwards arguments to super().
-		const loneBody = unwrapSoleBlockExpression(path.get('body'));
+		let loneBody = unwrapSoleBlockExpression(path.get('body'));
+		if (loneBody && t.isSequenceExpression(loneBody)) {
+			path.get('body').pushContainer(
+				'body',
+				loneBody.node.expressions.map(e => t.expressionStatement(e))
+			);
+			loneBody.remove();
+		}
+		loneBody = unwrapSoleBlockExpression(path.get('body'));
 		let isPointlessConstructor = false;
 		if (t.isCallExpression(loneBody) && isNamedIdentifier(loneBody.node.callee, 'super')) {
 			const args = loneBody.get('arguments');
