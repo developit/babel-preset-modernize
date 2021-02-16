@@ -332,4 +332,22 @@ describe('transform-classes', () => {
 			)
 		).toMatchInlineSnapshot(`""`);
 	});
+
+	it('should not remove arguments access in unrelated functions', () => {
+		const source = dent`
+			function n() {
+				for (var e = [], r = 0; r < arguments.length; r++) {
+					var i = arguments[r];
+					if (i) {
+						var l = void 0 === i ? "undefined" : t(i);
+						e.push(i);
+						if (Array.isArray(i)) e.push(n.apply(null, i));
+						for (var a in i) o.call(i, a) && i[a] && e.push(a);
+					}
+				}
+				return e.join(" ");
+			}
+		`;
+		expect(babel(source, CONFIG)).toEqual(source);
+	});
 });
