@@ -26,7 +26,7 @@
 export default ({ types: t }) => ({
 	name: 'transform-iife-arrows',
 	visitor: {
-		'FunctionExpression|FunctionDeclaration'(path) {
+		FunctionExpression(path) {
 			let parent = path.parentPath;
 			if (t.isExpressionStatement(parent)) parent = parent.parentPath;
 
@@ -66,20 +66,17 @@ export default ({ types: t }) => ({
 			});
 			if (deopt) return;
 
-			const node = t.clone(path.node);
-			node.type = 'ArrowFunctionExpression';
+			const node = t.arrowFunctionExpression(path.node.params, path.node.body);
+			node.async = path.node.async;
+			node.generator = path.node.generator;
 
-			if (node.body.body.length === 1 && t.isReturnStatement(node.body.body[0])) {
-				node.body = node.body.body[0].argument;
-			}
-
-			// swapping a Function Expression with an arrow requires hoisting its identifier.
-			// TODO: this could probably just be done via hoist() into its own scope?
-			if (t.isFunctionDeclaration(path)) {
-				path.replaceWith(t.variableDeclaration('var', [t.variableDeclarator(t.clone(path.node.id), node)]));
+			if (path.node.body.body.length === 1 && t.isReturnStatement(path.node.body.body[0])) {
+				node.body = t.cloneNode(node.body.body[0].argument, true);
 			} else {
-				path.replaceWith(node);
+				node.body = t.cloneNode(node.body);
 			}
+
+			path.replaceWith(node);
 		}
 	}
 });
