@@ -583,7 +583,7 @@ export default ({ types: t }) => {
 		path.visit({
 			Identifier(p) {
 				if ((refs = t.isIdentifier(p, { name: 'arguments' }))) {
-					path.stop();
+					p.stop();
 				}
 			}
 		});
