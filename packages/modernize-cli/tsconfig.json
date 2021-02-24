@@ -5,7 +5,8 @@
 		"allowJs": true,
 		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
-		"module": "ESNext"
+		"module": "ESNext",
+		"noEmit": true
 	},
 	"include": [
 		"src"

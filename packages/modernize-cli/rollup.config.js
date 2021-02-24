@@ -11,7 +11,7 @@ const config = {
 	input: 'src/cli.js',
 	inlineDynamicImports: true,
 	output: {
-		file: 'modernize.cjs',
+		file: 'dist/modernize.cjs',
 		format: 'cjs',
 		compact: true,
 		freeze: false,
@@ -22,21 +22,15 @@ const config = {
 		plugins: [
 			{
 				name: 'minify',
-				renderChunk(code) {
-					const result = terser.minify(code, {
+				async renderChunk(code) {
+					const result = await terser.minify(code, {
 						ecma: 2019,
-						module: true,
-						compress: {
-							toplevel: true
-						},
-						mangle: {
-							eval: true
-						},
+						compress: false,
+						mangle: false,
 						sourceMap: false,
 						output: {
 							comments: false,
-							inline_script: false,
-							ecma: 2019
+							inline_script: false
 						}
 					});
 					return result.code || null;
