@@ -1,0 +1,14 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"checkJs": true,
+		"allowJs": true,
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"module": "ESNext",
+		"noEmit": true
+	},
+	"include": [
+		"src"
+	]
+}
