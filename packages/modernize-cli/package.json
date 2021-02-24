@@ -1,0 +1,28 @@
+{
+  "name": "modernize-cli",
+  "version": "1.0.0",
+  "description": "CLI to convert ES5 to modern JS using babel-preset-modernize.",
+  "bin": {
+    "modernize": "./dist/modernize.js"
+  },
+  "source": "./src/cli.js",
+  "type": "module",
+  "scripts": {
+    "prepare": "microbundle --target node --external none -o dist/modernize.js"
+  },
+  "author": "Jason Miller (https://github.com/developit)",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.12.10",
+    "babel-preset-modernize": "0.0.5",
+    "cli-table3": "^0.6.0",
+    "gzip-size": "^6.0.0",
+    "kolorist": "^1.2.10",
+    "lebab": "^3.1.0",
+    "microbundle": "^0.13.0",
+    "pretty-bytes": "^5.5.0",
+    "sade": "^1.7.4",
+    "terser": "^5.5.1",
+    "tiny-glob": "^0.2.8"
+  }
+}
