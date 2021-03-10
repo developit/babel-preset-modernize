@@ -1,4 +1,3 @@
-import { resolve } from 'path';
 import shebangPlugin from 'rollup-plugin-preserve-shebang';
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -42,13 +41,14 @@ const config = {
 	plugins: [
 		shebangPlugin(),
 		commonjs({
-			exclude: [/\.mjs$/, resolve('src')],
 			ignore: builtins,
-			transformMixedEsModules: true
+			transformMixedEsModules: true,
+			esmExternals: true,
+			requireReturnsDefault: 'auto'
 		}),
 		nodeResolve({
 			preferBuiltins: true,
-			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
+			extensions: ['.mjs', '.js', '.json', '.cjs', '.node']
 		}),
 		json()
 	]
