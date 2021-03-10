@@ -44,11 +44,11 @@ const config = {
 		commonjs({
 			exclude: [/\.mjs$/, resolve('src')],
 			ignore: builtins,
-			transformMixedEsModules: true
+			requireReturnsDefault: 'preferred',
+			esmExternals: true
 		}),
 		nodeResolve({
-			preferBuiltins: true,
-			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
+			preferBuiltins: true
 		}),
 		json()
 	]
