@@ -501,9 +501,18 @@ export default function({ types: t }) {
 			let args = sup.args.map(a => a.node);
 			if (sup.apply) {
 				let last = args.pop();
-				if (last) {
-					args.push(t.spreadElement(last));
+				if (!last) {
+					// if there are no constructor arguments, inject a rest param:
+					const fn = rep.getFunctionParent();
+					if (fn.node.params.length === 0) {
+						last = fn.scope.generateUidIdentifier();
+						fn.pushContainer('params', t.restElement(t.cloneNode(last)));
+					} else {
+						// otherwise fall back to `super(...arguments)`:
+						last = t.identifier('arguments');
+					}
 				}
+				args.push(t.spreadElement(last));
 			}
 			p.replaceWithMultiple([
 				...before,
@@ -547,22 +556,15 @@ export default function({ types: t }) {
 		// Inject super() call, but not if it's a pointless constructor that just forwards arguments to super().
 		let loneBody = unwrapSoleBlockExpression(path.get('body'));
 		if (loneBody && t.isSequenceExpression(loneBody)) {
-			path.get('body').pushContainer(
-				'body',
-				loneBody.node.expressions.map(e => t.expressionStatement(e))
-			);
+			path.get('body').pushContainer('body', loneBody.node.expressions.map(e => t.expressionStatement(e)));
 			loneBody.remove();
 		}
 		loneBody = unwrapSoleBlockExpression(path.get('body'));
 		let isPointlessConstructor = false;
+		// Detect and remove `constructor(...a){super(...a)}`:
 		if (t.isCallExpression(loneBody) && isNamedIdentifier(loneBody.node.callee, 'super')) {
 			const args = loneBody.get('arguments');
-			// super()
-			if (args.length === 0) {
-				isPointlessConstructor = true;
-			}
-			// constructor(...a){super(...a)}
-			else if (
+			if (
 				args.length === 1 &&
 				t.isSpreadElement(args[0]) &&
 				t.isRestElement(params[0]) &&
@@ -945,12 +947,14 @@ export default function({ types: t }) {
 	return {
 		name: 'transform-infer-classes',
 		visitor: {
-			Program(path, state) {
-				state = state || {};
-				const { Program, ...v } = visitor;
-				Program.enter(path, state);
-				path.traverse(v, state);
-				Program.exit(path, state);
+			Program: {
+				exit(path, state) {
+					state = state || {};
+					const { Program, ...v } = visitor;
+					Program.enter(path, state);
+					path.traverse(v, state);
+					Program.exit(path, state);
+				}
 			}
 		}
 	};

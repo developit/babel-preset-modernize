@@ -62,7 +62,13 @@ describe('transform-classes', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`"class Profile extends Widget {}"`);
+		).toMatchInlineSnapshot(`
+		"class Profile extends Widget {
+			constructor() {
+				super();
+			}
+		}"
+	`);
 	});
 
 	it('should reverse loose mode classes with static methods', () => {
