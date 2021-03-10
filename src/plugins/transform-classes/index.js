@@ -194,6 +194,24 @@ export default function({ types: t }) {
 	}
 
 	/** @param {babel.NodePath} path */
+	function toArrowFunction(path) {
+		const arrow = t.arrowFunctionExpression(path.node.params, path.node.body);
+		arrow.async = path.node.async;
+		arrow.generator = path.node.generator;
+		path.replaceWith(arrow);
+	}
+
+	/** @param {babel.NodePath} path */
+	function attemptToArrowFunction(path) {
+		if (t.isArrowFunctionExpression(path)) return true;
+		if (canBeArrowFunction(path)) {
+			toArrowFunction(path);
+			return true;
+		}
+		return false;
+	}
+
+	/** @param {babel.NodePath} path */
 	function looseResolve(path) {
 		let resolved = path.resolve();
 		if (resolved.isIdentifier()) {
@@ -386,7 +404,7 @@ export default function({ types: t }) {
 
 		const bindingsToDissolve = new Set();
 
-		getRootExpressions(path.get('body.body')).forEach(p => {
+		getRootExpressions(path.get('body.body'), true).forEach(p => {
 			let rep = p;
 			if (t.isReturnStatement(rep)) {
 				rep = rep.get('argument');
@@ -400,6 +418,10 @@ export default function({ types: t }) {
 				rep = rep.get('right');
 			}
 
+			if (t.isAssignmentExpression(p.parent)) {
+				b = p.parentPath;
+			}
+
 			// Convert "class property method initializers" (arrow function class fields):
 			//   var o=this;o.method = function() { return o.props }
 			// ...back to arrow functions within the constructor:
@@ -411,15 +433,21 @@ export default function({ types: t }) {
 					(t.isCallExpression(obj) && isPossibleConstructorReturn(obj.get('callee').resolve()));
 				if (isThis) {
 					const fn = rep.get('right');
-					if (!t.isArrowFunctionExpression(fn) && canBeArrowFunction(fn)) {
-						const arrow = t.arrowFunctionExpression(fn.node.params, fn.node.body);
-						arrow.async = fn.node.async;
-						arrow.generator = fn.node.generator;
-						fn.replaceWith(arrow);
-					}
+					attemptToArrowFunction(fn);
+					// if (!t.isArrowFunctionExpression(fn) && canBeArrowFunction(fn)) {
+					// 	toArrowFunction(fn);
+					// 	// const arrow = t.arrowFunctionExpression(fn.node.params, fn.node.body);
+					// 	// arrow.async = fn.node.async;
+					// 	// arrow.generator = fn.node.generator;
+					// 	// fn.replaceWith(arrow);
+					// }
 					return;
 				}
 			}
+
+			// if (p.getSource().match(/_possibleConstructor/)) {
+			// 	console.info(p.getSource(), rep.node);
+			// }
 
 			if (!t.isCallExpression(rep)) return;
 
@@ -446,11 +474,15 @@ export default function({ types: t }) {
 						// we'll remove the intermediary var later (to avoid deopting arrow function reversal):
 						bindingsToDissolve.add(binding);
 					}
+					p.replaceWith(t.thisExpression());
 				} else {
 					// not an assignment, just a bare _possibleConstructorReturn()
-					// @TODO: this doesn't properly dereferences the arguments
-					p.remove();
-					return;
+					// @TODO: this doesn't properly dereference the arguments
+					// if (t.isAssignmentExpression(p.parent)) p.replaceWith(t.thisExpression());
+					// else p.remove();
+					// p.replaceWith(t.callExpression(t.super(), []));
+					p.replaceWith(t.thisExpression());
+					// return;
 				}
 			}
 
@@ -468,6 +500,10 @@ export default function({ types: t }) {
 			let before = [],
 				after = [];
 			let preserveName, kind;
+			// if (
+			// 	(t.isVariableDeclarator(rep.parent) && rep.parentKey === 'init') ||
+			// 	(t.isAssignmentExpression(rep.parent) && rep.parentKey === 'init')
+			// ) {
 			if (t.isVariableDeclarator(rep.parent) && rep.parentKey === 'init') {
 				const id = rep.parentPath.get('id');
 				// const _self = _super.apply(this,arguments); ... return _self;
@@ -477,7 +513,8 @@ export default function({ types: t }) {
 						preserveName = id.node.name;
 					} else if (t.isReturnStatement(refPath.parent)) {
 						refPath.parentPath.remove();
-					} else {
+						// } else {
+					} else if (getNonArrowFunctionParent(refPath) === rep.getFunctionParent()) {
 						refPath.replaceWith(t.thisExpression());
 					}
 				}
@@ -571,13 +608,19 @@ export default function({ types: t }) {
 				isPointlessConstructor = true;
 			}
 		}
+		// empty `constructor(){}`
+		if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 0) {
+			isPointlessConstructor = true;
+		}
 		if (!isPointlessConstructor) {
 			members.unshift(t.classMethod('constructor', t.identifier('constructor'), params, path.node.body));
 		}
 		const body = t.classBody(members);
 
+		inv.parentPath.scope.removeBinding(id.name);
 		if (t.isVariableDeclarator(inv.parent) && t.isNodesEquivalent(inv.parent.id, id)) {
 			if (inv.parentPath.parent.declarations.length === 1) {
+				// inv.parentPath.scope.removeBinding(id.name);
 				inv.parentPath.parentPath.replaceWith(t.classDeclaration(id, superD, body));
 				return;
 			}
@@ -823,23 +866,78 @@ export default function({ types: t }) {
 			if (isPossibleConstructorReturn(callee)) {
 				state.helpers.add(callee);
 				let p = path.parentPath;
+				const fn = path.getFunctionParent();
+				let ident, id, b;
 				if (t.isVariableDeclarator(p)) {
-					const ident = p.get('id').getOuterBindingIdentifierPaths();
-					const id = ident[Object.keys(ident)[0]];
-					const b = id.scope.getBinding(id.node.name);
+					ident = p.get('id').getOuterBindingIdentifierPaths();
+					id = ident[Object.keys(ident)[0]];
+					b = id.scope.getBinding(id.node.name);
+				} else if (t.isAssignmentExpression(p)) {
+					ident = p.get('left').getOuterBindingIdentifierPaths();
+					id = ident[Object.keys(ident)[0]];
+					b = id.scope.getBinding(id.node.name);
+					if (b.constantViolations.length !== 1 || b.constantViolations[0] !== p) {
+						console.info(b);
+					}
+				}
+				if (ident) {
+					// const ident = p.get('id').getOuterBindingIdentifierPaths();
+					// const id = ident[Object.keys(ident)[0]];
+					// const b = id.scope.getBinding(id.node.name);
 					b.referencePaths.forEach(rp => {
 						const rpp = rp.parentPath;
 						if (rpp && rpp.isReturnStatement()) rpp.remove();
 					});
-					id.scope.rename(id.node.name, 'this');
+
+					// id.scope.rename(id.node.name, 'this');
+					b.referencePaths = b.referencePaths.filter(refPath => {
+						// const pfn = refPath.getFunctionParent();
+						if (getNonArrowFunctionParent(refPath) !== fn) {
+							attemptToArrowFunction(refPath.getFunctionParent());
+						}
+						// if (
+						// 	getNonArrowFunctionParent(refPath) !== fn &&
+						// 	!t.isArrowFunctionExpression(pfn) &&
+						// 	canBeArrowFunction(pfn)
+						// ) {
+						// 	toArrowFunction(pfn);
+						// }
+						if (getNonArrowFunctionParent(refPath) === fn) {
+							refPath.replaceWith(t.thisExpression());
+							b.dereference();
+							return false;
+						}
+						return true;
+					});
+
 					p = p.parentPath;
 					if (!path.node.arguments[1]) {
 						console.log(path.node.arguments[0]);
 						console.log(path.getSource());
 					}
-					p.replaceWith(
-						t.callExpression(t.identifier('super'), path.node.arguments[1].arguments.slice(1).map(t.clone))
+					// console.info(path.getSource(), '\n --> ', require('@babel/generator').default(path.node).code);
+					let args = path.node.arguments[1].arguments.slice(1);
+					// console.info(path.getSource(), args);
+					// console.log(path.node.arguments[1].arguments.slice(1));
+					const superCall = t.callExpression(
+						t.identifier('super'),
+						args.map(t.cloneNode)
+						// path.node.arguments[1].arguments.slice(1).map(t.clone)
 					);
+					if (b.referencePaths.length) {
+						path.replaceWith(superCall);
+						// let decl;
+						// if (t.isAssignmentExpression(p)) {
+						// 	decl = t.assignmentExpression(t.cloneNode(id.node), t.thisExpression());
+						// } else {
+						// 	decl = t.variableDeclaration(p.node.kind, [
+						// 		t.variableDeclarator(t.cloneNode(id.node), t.thisExpression())
+						// 	]);
+						// }
+						// p.replaceWithMultiple(decl, superCall);
+					} else {
+						p.replaceWith(superCall);
+					}
 				}
 				return;
 			}
