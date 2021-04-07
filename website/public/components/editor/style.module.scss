@@ -1,0 +1,219 @@
+.editor {
+	position: relative;
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+
+	.beautify {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		padding: 5px 10px;
+		background: rgba(255,255,255,0.7);
+		border: 1px solid #fff;
+		border-bottom: none;
+		border-left: none;
+		color: #282C34;
+		font-weight: bold;
+		opacity: 0.4;
+		cursor: pointer;
+		z-index: 1;
+
+		&:hover {
+			opacity: 0.8;
+		}
+	}
+
+	> .input {
+		flex: 1;
+		box-sizing: border-box;
+		padding: 5px;
+		resize: none;
+		border: none;
+		white-space: nowrap;
+		font: 12px/1.3 'Source Code Pro', monospace;
+	}
+
+	.lintError {
+		box-sizing: border-box;
+		background: rgb(39, 1, 3);
+		color: #FFF;
+		text-shadow: 0 0 1px rgba(0,0,0,0.5);
+		padding: 0 2px 2px;
+		font: 10px/1.4 'Source Code Pro', 'source-code-pro', Menlo, Consolas, Monaco, 'Andale Mono', 'Courier New', monospace;
+		animation: intro 150ms ease forwards 1;
+		transform-origin: 0 0;
+		pre { margin: -1px 0 -6px; }
+
+		@keyframes intro {
+			from { transform:scaleY(0.5); opacity:0; }
+		}
+	}
+
+	:global {
+		.CodeMirror {
+			position: absolute;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background: #282C34;
+			color: #ABB2BF;
+			z-index: 0;
+
+			pre, code, .CodeMirror-linenumber {
+				font-family: 'source-code-pro', Menlo, Consolas, Monaco, 'Andale Mono', 'Courier New', monospace;
+				font-size: 12px;
+				line-height: 1.4;
+			}
+
+			.CodeMirror-selected {
+				background: #3E4451;
+			}
+
+			.CodeMirror-line::selection,
+			.CodeMirror-line > span::selection,
+			.CodeMirror-line > span > span::selection {
+				background: rgba(73, 72, 62, 0.99);
+			}
+
+			.CodeMirror-gutters {
+				background: #282C34;
+				border-right: 1px solid #282C34;
+			}
+
+			.CodeMirror-guttermarker {
+				color: white;
+			}
+
+			.CodeMirror-guttermarker-subtle {
+				color: #d0d0d0;
+			}
+
+			.CodeMirror-linenumber {
+				color: #4B5363;
+			}
+
+			.CodeMirror-cursor {
+				border-left: 1px solid #528BFF;
+			}
+
+			.cm-comment {
+				color: #667689;
+			}
+
+			.cm-atom {
+				color: #64B6C3;
+			}
+
+			.cm-number {
+				color: #D19A66;
+			}
+
+			.cm-property {
+				color: #82A7BE;
+				// color: #A687DE;
+			}
+			.cm-attribute {
+				// color: #C7C483;
+				// color: #82A7BE;
+				color: #A483E0;
+				// color: #A687DE;
+			}
+
+			.cm-keyword {
+				color: #D86C74;
+			}
+
+			.cm-string,
+			.cm-string-2 {
+				color: #98C379;
+			}
+
+			.cm-variable {
+				color: #ABB2BF;
+			}
+
+			.cm-variable-2 {
+				color: #C678DD;
+			}
+
+			.cm-variable-3 {
+				color: #64B6C3;
+			}
+
+			.cm-def {
+				color: #6CAFF2;
+			}
+
+			.cm-bracket {
+				color: #ABB2BF;
+			}
+
+			.cm-tag {
+				color: #D86C74;
+			}
+
+			.cm-header {
+				color: #ABB2BF;
+			}
+
+			.cm-link {
+				color: #98C379;
+			}
+
+			.cm-error {
+				background: #f92672;
+				color: red;
+			}
+
+			.CodeMirror-activeline-background {
+				background: #2C323B;
+			}
+
+			.CodeMirror-matchingbracket {
+				text-decoration: underline;
+				color: #ABB2BF !important;
+			}
+
+			.CodeMirror-vscrollbar,
+			.CodeMirror-hscrollbar {
+				pointer-events: auto !important;
+				cursor: default;
+				outline: none;
+				transition: opacity 2s ease;
+				&::-webkit-scrollbar {
+					width: 12px;
+					height: 10px;
+				}
+				&::-webkit-scrollbar-track {
+					background: rgba(255,255,255,0.1);
+				}
+				&::-webkit-scrollbar-thumb {
+					background: rgba(255,255,255,0.4);
+					box-shadow: 0 0 2px rgba(0,0,0,0.9);
+					&:hover {
+						background: rgba(255,255,255,0.6);
+					}
+				}
+			}
+			&:hover {
+				.CodeMirror-vscrollbar,
+				.CodeMirror-hscrollbar {
+					opacity: 1;
+					transition: opacity 200ms ease;
+				}
+			}
+			.CodeMirror-vscrollbar {
+				opacity: 0.4;
+				width: 12px !important;
+				box-shadow: inset 0.5px 0 0 rgba(255,255,255,0.3);
+			}
+			.CodeMirror-hscrollbar {
+				margin-right: 12px;
+				height: 10px !important;
+				opacity: 0;
+			}
+		}
+	}
+}

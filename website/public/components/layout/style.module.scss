@@ -1,0 +1,63 @@
+// .bar {
+//     position: relative;
+// }
+
+.icon {
+	margin-right: 10px !important;
+}
+
+.checkboxLabel {
+	font-size: 120%;
+	color: white;
+	padding-left: 0;
+}
+
+.drawerHeader {
+    background-color: #4801a5;
+    color: white;
+    h3 {
+        display: block;
+        flex: 1;
+        font-weight: 300;
+        font-size: 200%;
+        margin: 0;
+    }
+    h4 {
+        display: block;
+        font-weight: 300;
+        font-size: 120%;
+        margin: 0;
+    }
+}
+
+.item {
+	margin-top: 2px !important;
+	margin-bottom: 2px !important;
+	line-height: 1.3 !important;
+	cursor: pointer;
+}
+
+.exampleGroup {
+	margin: 5px 0 0;
+	padding: 5px 0 0;
+	// border-top: 1px solid #ddd;
+	box-shadow: 0 -0.5px 0 #eee;
+
+	&:last-child {
+		margin-bottom: 20px;
+	}
+
+	& & {
+		box-shadow: none;
+		margin: 2px 0 0 15px;
+		padding: 0;
+	}
+
+	h4 {
+		padding: 0 18px;
+		margin: 0;
+		font-weight: normal;
+		color: #999;
+		font-size: 110%;
+	}
+}

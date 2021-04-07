@@ -1,0 +1,1 @@
+self.require = function() {};

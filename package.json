@@ -21,6 +21,10 @@
   "files": [
     "dist"
   ],
+  "workspaces": [
+    "packages/modernize-cli",
+    "website"
+  ],
   "babel": {
     "presets": [
       [

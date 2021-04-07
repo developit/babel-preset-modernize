@@ -1,5 +1,6 @@
 dist
 .dist
+.cache
 node_modules
 package-lock.json
 .modern.js

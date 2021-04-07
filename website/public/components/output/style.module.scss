@@ -1,0 +1,136 @@
+.output {
+	position: relative;
+	// display: flex;
+	// flex-direction: column;
+	flex: 1;
+	overflow: hidden;
+
+	.size,
+	.timings {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		padding: 5px 10px;
+		background: #000;
+		font-size: 80%;
+		color: #fff;
+		opacity: 0.6;
+		z-index: 2;
+		transition: opacity 300ms ease;
+		backdrop-filter: blur(2px);
+		&:hover {
+			opacity: 1 !important;
+		}
+
+		small {
+			color: #aaa;
+		}
+
+		em {
+			font-style: normal;
+			color: rgb(116, 144, 180);
+		}
+	}
+
+	.code:hover .size,
+	.code:hover .timings {
+		opacity: 0.1;
+	}
+
+	.timings {
+		bottom: 2.5em;
+
+		dl {
+			display: flex;
+			margin: 0;
+		}
+		dt {
+			flex: 1;
+			order: 2;
+			padding: 0 0 0 1em;
+			text-align: left;
+		}
+		dd {
+			width: 3.3em;
+			margin: 0;
+			text-align: right;
+		}
+	}
+
+	> .error {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		width: 100%;
+		box-sizing: border-box;
+		background: #831111;
+		color: #fff;
+		font-size: 80%;
+		padding: 10px;
+		overflow: auto;
+		transform-origin: 0 100%;
+		animation: in 200ms ease forwards 1;
+
+		@keyframes in {
+			0% {
+				opacity: 0;
+				transform: translateY(100%);
+				// transform: scaleY(0.5);
+			}
+		}
+
+		> pre {
+			margin: 0;
+			padding: 0;
+			white-space: pre-wrap;
+		}
+	}
+
+	.ast {
+		// display: flex;
+		flex: 0 0 50%;
+		// overflow: hidden;
+		// height: 50%;
+		overflow: scroll;
+	}
+
+	.code {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		background: #f4f4f4;
+		// overflow: scroll;
+		overflow: hidden;
+	}
+
+	.tabs {
+		flex: 0;
+		background: #2f343d;
+		color: #ABB2BF;
+		padding: 4px 10px 1px;
+		border-bottom: 1px solid #383e4d;
+
+		button {
+			background: linear-gradient(to bottom, #696d71, #494d51) #666;
+			border: none;
+			box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+			color: #fff;
+			padding: 4px 8px;
+			margin: 2px 4px;
+			cursor: pointer;
+			appearance: none;
+			outline: none;
+			border-radius: 3px;
+			&:hover {
+				background: linear-gradient(to bottom, #797d81, #595d61) #777;
+			}
+		}
+	}
+
+	.editor {
+		flex: 1;
+		// box-sizing: border-box;
+		// padding: 5px;
+		font: 12px/1.3 'Source Code Pro', monospace;
+	}
+}

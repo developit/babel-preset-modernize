@@ -1,0 +1,17 @@
+.main {
+	flex: 1;
+	overflow: hidden;
+
+	.editors {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+
+		&:not(.customEnabled) > two-up {
+			--split-point: 100% !important;
+			& > [class*="handle"] {
+				display: none !important;
+			}
+		}
+	}
+}
