@@ -1,14 +1,8 @@
-console.log('hi from worker');
 import './worker-fills.js';
 import { minify } from 'terser';
 import { gzip } from 'pako/lib/deflate';
-// import presetModernize from '../../../../babel-preset-modernize/src';
-// import presetModernize from '../../../../babel-preset-modernize/dist/standalone';
 import presetModernize from 'babel-preset-modernize/dist/standalone.js';
-// import presetModules from '@babel/preset-modules';
 import beautify from 'js-beautify';
-
-console.log({ minify, gzip, presetModernize, beautify });
 
 const RPC_METHODS = {
 	applyTransformations

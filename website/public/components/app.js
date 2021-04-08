@@ -49,21 +49,21 @@ function getInitialState() {
 
 let store = createStore(getInitialState());
 
-// if (!PRERENDER) {
-// 	let timer;
-// 	const ric = window.requestIdleCallback || setTimeout.bind(null, 500);
-// 	window.STATE = store.getState();
-// 	store.subscribe(state => {
-// 		window.STATE = state;
-// 		if (!timer) timer = ric(save);
-// 	});
-// 	const save = () => {
-// 		timer = null;
-// 		try {
-// 			localStorage[KEY] = JSON.stringify(window.STATE);
-// 		} catch (e) {}
-// 	};
-// }
+if (typeof localStorage !== 'undefined') {
+	let timer;
+	const ric = window.requestIdleCallback || setTimeout.bind(null, 500);
+	window.STATE = store.getState();
+	store.subscribe(state => {
+		window.STATE = state;
+		if (!timer) timer = ric(save);
+	});
+	const save = () => {
+		timer = null;
+		try {
+			localStorage[KEY] = JSON.stringify(window.STATE);
+		} catch (e) {}
+	};
+}
 
 export default function App() {
 	return (

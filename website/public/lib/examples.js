@@ -1,6 +1,6 @@
 // let ctx = require.context('!!file-loader?name=examples/[name].[hash].txt!../../examples', false, /\.js/);
 
-import files from 'samples:../samples';
+import files from 'tree:../samples';
 
 // let ctx = require.context('!!file-loader?name=examples/[name].[hash].txt!../../samples', true, /\.js/);
 // const EXAMPLES = ctx.keys().map(path => {

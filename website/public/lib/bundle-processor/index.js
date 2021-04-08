@@ -1,13 +1,4 @@
-// @ts-check
-
-// import { applyPatches } from 'immer';
-
-// @ts-ignore
-// const worker = process.env.NODE_ENV==='development' ? () => require('./worker') : require('workerize-loader!./worker');
-//const worker = require('workerize-loader!./worker');
 // import workerURL from 'bundle:./worker.js';
-// const workerURL = 'data:';
-const workerURL = new URL('./worker.js', import.meta.url);
 
 function deferred() {
 	let resolve,
@@ -26,8 +17,23 @@ let RPC_ID = 0;
 
 export default class BundleProcessor {
 	constructor() {
-		// this.worker = worker();
-		this.worker = new Worker(workerURL, { type: 'module' });
+		// this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+		// const url = new URL('./worker.js', import.meta.url);
+		async function worker() {
+			let q = [],
+				p = q.push.bind(q);
+			addEventListener('message', p);
+			try {
+				await import('./worker.js');
+			} finally {
+				removeEventListener('message', p);
+				q.forEach(e => dispatchEvent(e));
+				q.length = 0;
+			}
+		}
+		const code = `(${worker})()`.replace(/import\((.*?)\)/g, `import(new URL($1, ${JSON.stringify(import.meta.url)}))`);
+		const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+		this.worker = new Worker(url, { type: 'module' });
 		this.cache = new Map();
 		this.next = null;
 		this.current = null;
