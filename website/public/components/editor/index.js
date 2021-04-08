@@ -66,7 +66,7 @@ export default class Editor extends Component {
 	}
 
 	componentDidMount() {
-		import('./codemirror').then(m => {
+		import('./codemirror.js').then(m => {
 			const codemirror = m.default;
 			this.input.current.style.display = 'none';
 			this.codemirror = codemirror(this.base, {

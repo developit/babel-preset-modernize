@@ -27,27 +27,27 @@ const AppDrawer = connect(
 )(
 	class AppDrawer extends Component {
 		componentDidMount() {
-			//setTimeout(() => this.setState({ mounted: true }));
-			this.mounted = true;
+			// this.mounted = true;
 		}
 
 		render({ drawerOpen, closeDrawer, loadExample, reset }) {
-			if (!this.mounted) drawerOpen = false;
-			console.log({ drawerOpen });
+			// if (!this.mounted) drawerOpen = false;
 			return (
-				<Drawer dismissible modal open={drawerOpen} onClose={closeDrawer}>
-					<DrawerHeader class={style.drawerHeader}>
+				<Drawer modal open={drawerOpen} onClose={closeDrawer}>
+					<DrawerHeader className={style.drawerHeader}>
 						<h3>Examples</h3>
 						<h4>from around the web</h4>
 					</DrawerHeader>
 					<DrawerContent>
-						<ListItem onClick={reset}>
-							<ListItemGraphic className={style.icon} icon="settings_backup_restore" />
-							Reset
-						</ListItem>
-						{getGroupedExamples().map(item => (
-							<Item item={item} loadExample={loadExample} />
-						))}
+						<List>
+							<ListItem onClick={reset}>
+								<ListItemGraphic className={style.icon} icon="settings_backup_restore" />
+								Reset
+							</ListItem>
+							{getGroupedExamples().map(item => (
+								<Item item={item} loadExample={loadExample} />
+							))}
+						</List>
 					</DrawerContent>
 				</Drawer>
 			);

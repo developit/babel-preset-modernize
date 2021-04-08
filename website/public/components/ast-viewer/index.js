@@ -2,7 +2,7 @@ import { Component } from 'preact';
 import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
 import { renderLazily } from '../../lib/lazy-render.js';
 import cx from 'clsx';
-import style from './style.scss';
+import style from './style.module.scss';
 
 function scrollIntoViewport(parent, selected) {
 	const scrollTop = parent.scrollTop;
@@ -224,41 +224,31 @@ function AstNode({
 			class={cx(style.node, hasChildren && style.hasChildren, isSelected && style.highlighted)}
 			onMouseOver={onHover}
 			onDblClick={triggerSelect}
-			// is-selected={isSelected}
 		>
 			<label class={style.title}>
 				{hasChildren && <input type="checkbox" checked={isExpanded} onClick={toggle} />}
 				{node.type}
 			</label>
-			{/* <span class={style.select} onClick={triggerSelect}>↵</span> */}
 			<ul class={style.attributes} aria-hidden={hasChildren && isExpanded}>
-				{attributes.map(
-					({ name, value }) =>
-						hasChildren ? (
-							value && <li>{name}</li>
-						) : (
-							<li>
-								{name}: {value != null && renderValue(value)}
-							</li>
-						)
-					// <ul>
-					//<dd>{value + ''}</dd>
-					// </ul>
+				{attributes.map(({ name, value }) =>
+					hasChildren ? (
+						value && <li>{name}</li>
+					) : (
+						<li>
+							{name}: {value != null && renderValue(value)}
+						</li>
+					)
 				)}
 			</ul>
 			{hasChildren && (
 				<div class={style.children} aria-hidden={!isExpanded}>
-					{/*hasEverExpanded.current*/ isExpanded &&
+					{isExpanded &&
 						attributes.map(({ name, value }) => (
 							<dl>
 								<dt>{name}:</dt>
 								<dd class={Array.isArray(value) ? style.list : style.single}>
 									{Array.isArray(value)
-										? [
-												// '[',
-												value.length ? value.map(v => renderValue(v, childProps)) : ' '
-												// ']'
-										  ]
+										? [value.length ? value.map(v => renderValue(v, childProps)) : ' ']
 										: renderValue(value, childProps)}
 								</dd>
 							</dl>
