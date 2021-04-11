@@ -29,6 +29,10 @@ body {
 	flex-direction: column;
 }
 
+body .mdc-top-app-bar {
+	position: relative;
+}
+
 .mdc-ripple-upgraded {
 	overflow: hidden;
 	position: relative;

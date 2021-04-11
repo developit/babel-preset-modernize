@@ -5,8 +5,7 @@ import {
 	TopAppBarTitle,
 	TopAppBarActionItem,
 	TopAppBarSection,
-	TopAppBarRow,
-	TopAppBarFixedAdjust
+	TopAppBarRow
 } from '@rmwc/top-app-bar';
 import 'preact-material-components/TopAppBar/style.css';
 import { FormField } from '@rmwc/formfield';
@@ -70,9 +69,8 @@ const Layout = connect(
 				</TopAppBarSection>
 			</TopAppBarRow>
 		</TopAppBar>
-		<Drawer />
-		<TopAppBarFixedAdjust />
 		<Main />
+		<Drawer />
 	</div>
 ));
 
