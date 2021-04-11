@@ -1,8 +1,10 @@
 import './worker-fills.js';
 import { minify } from 'terser';
-import { gzip } from 'pako/lib/deflate';
+import * as deflate from 'pako/lib/deflate';
 import presetModernize from 'babel-preset-modernize/dist/standalone.js';
 import beautify from 'js-beautify';
+
+const gzip = deflate.gzip || deflate.default.gzip;
 
 const RPC_METHODS = {
 	applyTransformations
@@ -42,64 +44,6 @@ function initBabel(babel) {
 	babel.registerPreset('babel-preset-modernize', presetModernize);
 	// babel.registerPreset('@babel/preset-modules', presetModules);
 }
-// initBabel(babel);
-
-// function toLocalPlugin(plugin) {
-// 	if (Array.isArray(plugin)) {
-// 		plugin[0] = toLocalPlugin(plugin[0]);
-// 		return plugin;
-// 	}
-// 	if (plugin in babel.availablePlugins) {
-// 		return babel.availablePlugins[plugin];
-// 	}
-// 	if (plugin[0] === '/') {
-// 		for (const name in babel.availablePlugins) {
-// 			if (plugin[0].indexOf(name) !== -1) {
-// 				return name;
-// 			}
-// 		}
-// 	}
-// 	return plugin;
-// }
-
-// function bundledPreset(preset) {
-// 	return function() {
-// 		const config = preset.apply(this, arguments);
-// 		if (config.plugins) {
-// 			config.plugins = config.plugins.map(toLocalPlugin);
-// 		}
-// 		return config;
-// 	};
-// }
-
-// Promise.all(presetModernize({ assertVersion() {} }, {}).plugins.map(async pluginEntry => {
-// 	const plugin = Array.isArray(pluginEntry) ? pluginEntry[0] : pluginEntry;
-// 	const name = path.basename(plugin);
-// 	const m = await import(
-
-// 		/* webpackMode: "eager" */
-// 		/* webpackExclude: /\btest\b/ */
-// 		`../../../../babel-preset-modernize/src/plugins/${name}`
-// 	);
-// 	babel.registerPlugin(plugin, m.default || m);
-// })).then(() => {
-// 	babel.registerPreset('babel-preset-modernize', bundledPreset(presetModernize));
-// });
-
-// Promise.all(presetModules({ assertVersion() {} }, {}).plugins.map(async pluginEntry => {
-// 	const plugin = Array.isArray(pluginEntry) ? pluginEntry[0] : pluginEntry;
-// 	const name = path.basename(plugin);
-// 	const m = await import(
-
-// 		/* webpackMode: "eager" */
-// 		`@babel/preset-modules/lib/plugins/${name}`
-// 	);
-// 	babel.registerPlugin(plugin, m.default || m);
-// })).then(() => {
-// 	babel.registerPreset('@babel/preset-modules', bundledPreset(presetModernize));
-// });
-
-// self.babel = babel;
 
 function toCjs(code, filename) {
 	const result = babel.transform(code, {

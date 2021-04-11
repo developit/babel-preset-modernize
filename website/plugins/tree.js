@@ -9,8 +9,8 @@ export default function treePlugin({ cwd } = {}) {
 		},
 		async resolveId(id, importer) {
 			if (!id.startsWith('tree:')) return;
-			const resolved = await this.resolve(id.slice(5), importer);
-			if (resolved) return `\0tree:${resolved.id}`;
+			id = id.slice(5);
+			return `\0tree:${path.relative(cwd, path.resolve(path.dirname(importer), id))}`;
 		},
 		async load(id) {
 			if (!id.startsWith('\0tree:')) return;

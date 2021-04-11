@@ -1,30 +1,7 @@
 import createStore from 'unistore';
 import { Provider } from 'unistore/preact';
+import { ErrorBoundary } from 'preact-iso';
 import Layout from './layout/index.js';
-
-// if (typeof addEventListener !== 'undefined') {
-// 	addEventListener('contextmenu', e => {
-// 		e.preventDefault();
-// 	});
-// }
-
-// window.addEventListener(
-// 	'selectstart',
-// 	e => {
-// 		let { target } = e;
-// 		let c = 0;
-// 		while (target) {
-// 			if ('selectionStart' in target) return;
-// 			target = target.parentNode;
-// 			if (++c > 1000) {
-// 				console.log(target);
-// 				return;
-// 			}
-// 		}
-// 		e.preventDefault();
-// 	},
-// 	true
-// );
 
 const BLANK_STATE = {
 	code: '',
@@ -68,7 +45,9 @@ if (typeof localStorage !== 'undefined') {
 export default function App() {
 	return (
 		<Provider store={store}>
-			<Layout />
+			<ErrorBoundary>
+				<Layout />
+			</ErrorBoundary>
 		</Provider>
 	);
 }

@@ -7,6 +7,8 @@ export default function noParse({ include, exclude = /^$/ }) {
 	return {
 		name: 'noparse',
 		resolveId(id, importer) {
+			if (id.startsWith('\0noparse:')) return id;
+			if (id.startsWith('noparse:')) return '\0' + id;
 			if (id.match(include) && !id.match(exclude)) return `\0noparse:${id}`;
 		},
 		async load(id) {
@@ -24,7 +26,7 @@ export default function noParse({ include, exclude = /^$/ }) {
 					str = new Function('return ' + token[1])();
 				} catch (e) {}
 				if (str && str.trim() === str) imports.add(str);
-				else console.warn(`Failed to analyze dynamic require() usage in ${id}:\n${token[0]}`);
+				// else console.warn(`Failed to analyze dynamic require() usage in ${id}:\n${token[0]}`);
 			}
 			let out = '';
 			let vars = [...imports].map((str, i) => {

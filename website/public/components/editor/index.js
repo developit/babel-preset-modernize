@@ -3,6 +3,15 @@ import 'codemirror/lib/codemirror.css';
 import style from './style.module.scss';
 import BundleProcessor from '../../lib/bundle-processor/index.js';
 
+// Start loading CodeMirror immediately.
+// If it's available synchronously we can initialize it immediately on mount.
+let codemirror, codeMirrorPromise;
+if (typeof navigator !== 'undefined') {
+	codeMirrorPromise = import('./codemirror.js').then(m => {
+		codemirror = m.default;
+	});
+}
+
 export default class Editor extends Component {
 	input = createRef();
 
@@ -19,14 +28,6 @@ export default class Editor extends Component {
 			this.props.onChange(code);
 		});
 	};
-
-	// handleInput = e => {
-	// 	let code = e.target.value;
-	// 	this.setState({ code });
-	// 	if (this.props.onChange) {
-	// 		this.props.onChange(code);
-	// 	}
-	// };
 
 	showError(error) {
 		clearTimeout(this.showErrorTimer);
@@ -66,8 +67,7 @@ export default class Editor extends Component {
 	}
 
 	componentDidMount() {
-		import('./codemirror.js').then(m => {
-			const codemirror = m.default;
+		const init = () => {
 			this.input.current.style.display = 'none';
 			this.codemirror = codemirror(this.base, {
 				mode: 'jsx',
@@ -116,7 +116,9 @@ export default class Editor extends Component {
 					});
 				});
 			}, 1);
-		});
+		};
+		if (codemirror) init();
+		else codeMirrorPromise.then(init);
 	}
 
 	shouldComponentUpdate(props, state) {
@@ -181,7 +183,6 @@ export default class Editor extends Component {
 					readonly={readonly}
 					class={style.input}
 					value={code}
-					// onInput={this.handleInput}
 				/>
 			</div>
 		);
