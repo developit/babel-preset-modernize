@@ -1,41 +1,41 @@
 {
-  "name": "website",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "start": "wmr",
-    "build": "wmr build --prerender",
-    "serve": "wmr serve"
-  },
-  "devDependencies": {
-    "@babel/standalone": "^7.8.3",
-    "@wmr-plugins/directory-import": "^0.1.2",
-    "babel-preset-modernize": "*",
-    "pako": "^1.0.10",
-    "clean-set": "^1.1.2",
-    "clsx": "^1.1.1",
-    "codemirror": "^5.51.0",
-    "js-beautify": "^1.10.3",
-    "material-components-web": "5.1.0",
-    "pointer-tracker": "^2.0.3",
-    "preact": "^10.5.13",
-    "preact-iso": "^1.1.1",
-    "preact-render-to-string": "^5.1.19",
-    "rmwc": "^6.1.4",
-    "terser": "^5.3.8",
-    "two-up-element": "^1.0.1",
-    "wmr": "^1.5.1",
-    "unistore": "^3.5.2"
-  },
-  "resolutions": {
-    "@material/*": "^5.0.0"
-  },
-  "alias": {
-    "react": "preact/compat",
-    "react-dom": "preact/compat",
-    "@material/dom/dist/mdc.dom.js": "@material/dom",
-    "unistore/preact": "unistore/full/preact.es.js",
-    "@babel/standalone": "@babel/standalone/babel.min.js",
-    "terser": "terser/dist/bundle.min.js"
-  }
+	"name": "website",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "wmr",
+		"build": "wmr build --prerender",
+		"serve": "wmr serve"
+	},
+	"devDependencies": {
+		"@babel/standalone": "^7.8.3",
+		"@wmr-plugins/directory-import": "^0.1.2",
+		"babel-preset-modernize": "*",
+		"pako": "^1.0.10",
+		"clean-set": "^1.1.2",
+		"clsx": "^1.1.1",
+		"codemirror": "^5.51.0",
+		"js-beautify": "^1.10.3",
+		"material-components-web": "5.1.0",
+		"pointer-tracker": "^2.0.3",
+		"preact": "^10.5.13",
+		"preact-iso": "^1.1.1",
+		"preact-render-to-string": "^5.1.19",
+		"rmwc": "^6.1.4",
+		"terser": "^5.3.8",
+		"two-up-element": "^1.0.1",
+		"wmr": "^1.5.1",
+		"unistore": "^3.5.2"
+	},
+	"resolutions": {
+		"@material/*": "^5.0.0"
+	},
+	"alias": {
+		"react": "preact/compat",
+		"react-dom": "preact/compat",
+		"@material/dom/dist/mdc.dom.js": "@material/dom",
+		"unistore/preact": "unistore/full/preact.es.js",
+		"@babel/standalone": "@babel/standalone/babel.min.js",
+		"terser": "terser/dist/bundle.min.js"
+	}
 }

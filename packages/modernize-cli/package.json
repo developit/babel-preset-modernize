@@ -1,40 +1,40 @@
 {
-  "name": "modernize-cli",
-  "version": "1.0.1",
-  "description": "CLI to convert ES5 to modern JS using babel-preset-modernize.",
-  "bin": {
-    "modernize": "./dist/modernize.cjs"
-  },
-  "source": "./src/cli.js",
-  "type": "module",
-  "scripts": {
-    "prepare": "rollup -c"
-  },
-  "files": [
-    "dist"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/developit/babel-preset-modernize",
-    "directory": "packages/modernize-cli"
-  },
-  "author": "Jason Miller (https://github.com/developit)",
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "@babel/core": "^7.12.10",
-    "@rollup/plugin-commonjs": "^17.1.0",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^11.2.0",
-    "babel-preset-modernize": "0.0.6",
-    "cli-table3": "^0.6.0",
-    "gzip-size": "^6.0.0",
-    "kolorist": "^1.2.10",
-    "lebab": "^3.1.0",
-    "pretty-bytes": "^5.5.0",
-    "rollup": "^2.39.1",
-    "rollup-plugin-preserve-shebang": "^1.0.1",
-    "sade": "^1.7.4",
-    "terser": "^5.5.1",
-    "tiny-glob": "^0.2.8"
-  }
+	"name": "modernize-cli",
+	"version": "1.0.1",
+	"description": "CLI to convert ES5 to modern JS using babel-preset-modernize.",
+	"bin": {
+		"modernize": "./dist/modernize.cjs"
+	},
+	"source": "./src/cli.js",
+	"type": "module",
+	"scripts": {
+		"prepare": "rollup -c"
+	},
+	"files": [
+		"dist"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/developit/babel-preset-modernize",
+		"directory": "packages/modernize-cli"
+	},
+	"author": "Jason Miller (https://github.com/developit)",
+	"license": "Apache-2.0",
+	"devDependencies": {
+		"@babel/core": "^7.12.10",
+		"@rollup/plugin-commonjs": "^17.1.0",
+		"@rollup/plugin-json": "^4.1.0",
+		"@rollup/plugin-node-resolve": "^11.2.0",
+		"babel-preset-modernize": "0.0.6",
+		"cli-table3": "^0.6.0",
+		"gzip-size": "^6.0.0",
+		"kolorist": "^1.2.10",
+		"lebab": "^3.1.0",
+		"pretty-bytes": "^5.5.0",
+		"rollup": "^2.39.1",
+		"rollup-plugin-preserve-shebang": "^1.0.1",
+		"sade": "^1.7.4",
+		"terser": "^5.5.1",
+		"tiny-glob": "^0.2.8"
+	}
 }
