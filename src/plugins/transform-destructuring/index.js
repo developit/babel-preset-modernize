@@ -267,7 +267,8 @@ export default ({ types: t }) => {
 				onlyIfProperties = true;
 				rest = root.parentPath;
 				isIterable = true;
-				restOffset = root.get('arguments.0').node.value;
+				const firstArg = root.get('arguments.0');
+				restOffset = firstArg ? firstArg.node.value : 0;
 				return true;
 			} else if (t.isMemberExpression(parent)) {
 				if (p.key === 'object' && t.isVariableDeclarator(root)) {

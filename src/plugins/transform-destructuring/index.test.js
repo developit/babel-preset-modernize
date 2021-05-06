@@ -80,6 +80,10 @@ describe('transform-destructuring', () => {
 	`);
 	});
 
+	it('should handle zero-arity slice()', () => {
+		expect(b(`const x = a => a.slice();`)).toMatchInlineSnapshot(`"const x = a => a.slice();"`);
+	});
+
 	it('should destructure static computed property access', () => {
 		expect(
 			b(dent`
