@@ -19,7 +19,7 @@
 		"material-components-web": "5.1.0",
 		"pointer-tracker": "^2.0.3",
 		"preact": "^10.5.13",
-		"preact-iso": "^1.1.1",
+		"preact-iso": "^2.0.0",
 		"preact-render-to-string": "^5.1.19",
 		"rmwc": "^6.1.4",
 		"terser": "^5.3.8",
@@ -34,7 +34,7 @@
 		"react": "preact/compat",
 		"react-dom": "preact/compat",
 		"@material/dom/dist/mdc.dom.js": "@material/dom",
-		"unistore/preact": "unistore/full/preact.es.js",
+		"unistore/preact": "unistore/src/integrations/preact.js",
 		"@babel/standalone": "@babel/standalone/babel.min.js",
 		"terser": "terser/dist/bundle.min.js"
 	}
