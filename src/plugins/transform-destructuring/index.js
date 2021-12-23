@@ -321,6 +321,10 @@ export default ({ types: t }) => {
 						}
 					} else {
 						// Bailout: there is unknown computed property access into the object.
+						if (pattern.length) {
+							break;
+						}
+
 						return;
 					}
 				}

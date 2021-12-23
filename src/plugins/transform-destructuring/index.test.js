@@ -112,13 +112,26 @@ describe('transform-destructuring', () => {
 			let o = q[t];
 		`)
 		).toMatchInlineSnapshot(`
-		"const q = {
-			a: 1,
-			b: 2
-		};
-		let t = window.t;
-		let o = q[t];"
-	`);
+			"const q = {
+				a: 1,
+				b: 2
+			};
+			let t = window.t;
+			let o = q[t];"
+		`);
+
+		expect(
+			b(dent`
+				var keys = [];
+				var i = keys.length;
+				var opt = keys[i];
+			`)
+		).toMatchInlineSnapshot(`
+			"var {
+				length: i
+			} = [];
+			var opt = keys[i];"
+		`);
 	});
 
 	describe('array-like destructuring', () => {
