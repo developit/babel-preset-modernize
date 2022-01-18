@@ -580,7 +580,11 @@ export default function({ types: t }) {
 
 		if (t.isVariableDeclarator(inv.parent) && t.isNodesEquivalent(inv.parent.id, id)) {
 			if (inv.parentPath.parent.declarations.length === 1) {
-				inv.parentPath.parentPath.replaceWith(t.classDeclaration(id, superD, body));
+				try {
+					inv.parentPath.parentPath.replaceWith(t.classDeclaration(id, superD, body));
+				} catch (err) {
+					/* Ignore declaration duplicate */
+				}
 				return;
 			}
 		}
