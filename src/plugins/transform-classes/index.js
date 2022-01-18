@@ -556,7 +556,10 @@ export default function({ types: t }) {
 		// Inject super() call, but not if it's a pointless constructor that just forwards arguments to super().
 		let loneBody = unwrapSoleBlockExpression(path.get('body'));
 		if (loneBody && t.isSequenceExpression(loneBody)) {
-			path.get('body').pushContainer('body', loneBody.node.expressions.map(e => t.expressionStatement(e)));
+			path.get('body').pushContainer(
+				'body',
+				loneBody.node.expressions.map(e => t.expressionStatement(e))
+			);
 			loneBody.remove();
 		}
 		loneBody = unwrapSoleBlockExpression(path.get('body'));
@@ -583,7 +586,8 @@ export default function({ types: t }) {
 				try {
 					inv.parentPath.parentPath.replaceWith(t.classDeclaration(id, superD, body));
 				} catch (err) {
-					/* Ignore declaration duplicate */
+					// ignore duplicate declarations
+					// (note: find a better solution than silencing this scope error)
 				}
 				return;
 			}
@@ -857,19 +861,30 @@ export default function({ types: t }) {
 				return;
 			}
 
-			// structural inference based on super call
+			// (function(){function P(){}return P;})()
+			const ret = t.isFunction(callee) && getReturnedBindingPath(callee);
+			if (ret) {
+				let retId = t.isFunctionDeclaration(ret) ? ret.get('id') : ret;
+				let outerIdents = path.parentPath.getOuterBindingIdentifiers();
+				for (let name in outerIdents) {
+					let outerIdent = outerIdents[name];
+					if (t.isNodesEquivalent(outerIdent, retId.node)) {
+						processConstructor(ret, state);
+						return;
+					}
+					break;
+				}
+			}
+
 			let ctorParent = path.getFunctionParent();
 			if (!ctorParent) return;
 
+			// structural inference based on super call
 			let outer = ctorParent.parentPath;
+			if (!outer) return;
+
 			if (t.isBlockStatement(outer)) outer = outer.parentPath;
 			if (!t.isFunctionExpression(outer)) return;
-
-			// (function(){function P(){}return P;})()
-			const ret = getReturnedBindingPath(outer);
-			if (!ret) return;
-			if (!t.isNodesEquivalent(ctorParent.node, ret.node)) return;
-			if (!t.isCallExpression(outer.parent)) return;
 
 			const sup = checkSuperCall(path, outer.get('params.0'));
 			if (!sup) return;
