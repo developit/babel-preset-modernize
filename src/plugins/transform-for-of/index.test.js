@@ -87,20 +87,18 @@ describe('transform-for-of', () => {
 				`,
 				CONFIG
 			)
-		).toMatchInlineSnapshot(`"
-function getPath(obj, key) {
+		).toMatchInlineSnapshot(`"function getPath(obj, key) {
 	var keys = key.split('.');
 
 	for (var _key of keys) {
 		if (obj == null) {
-				return obj;
+			return obj;
 		}
 
 		obj = obj[_key];
 	}
 
 	return obj;
-}
-		"`);
+}"`);
 	});
 });
