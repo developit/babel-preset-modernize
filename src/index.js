@@ -44,6 +44,7 @@ export default function babelPresetModernize(_, options = {}) {
 			path.resolve(__dirname, './plugins/transform-fallbacks'),
 			path.resolve(__dirname, './plugins/transform-iife-arrows'),
 			path.resolve(__dirname, './plugins/transform-implicit-scope'),
+			path.resolve(__dirname, './plugins/transform-for-of'),
 			path.resolve(__dirname, './plugins/transform-array-spread'),
 			path.resolve(__dirname, './plugins/transform-template-literals'),
 			webpack && path.resolve(__dirname, './plugins/transform-optimize-webpack'),
