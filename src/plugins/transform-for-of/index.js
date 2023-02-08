@@ -30,10 +30,10 @@ export default ({ types: t, template }) => {
 				const init = path.get('init');
 				const test = path.get('test');
 
-        // the update method for a transpiled iterator loop is empty (cheap check so we run it first)
+				// the update method for a transpiled iterator loop is empty (cheap check so we run it first)
 				if (path.node.update != null) return;
 				
-        // transpiled iterator loops are wrapped in a try/catch to invoke the iterator error method
+				// transpiled iterator loops are wrapped in a try/catch to invoke the iterator error method
 				if (!t.isTryStatement(path.parentPath.parent)) return;
 
 				// _iterator.s()
@@ -63,14 +63,16 @@ export default ({ types: t, template }) => {
 				const helper = init.get('callee.object').resolve();
 				const helperName = helper.node.callee.name;
 				const helperFn = helper.scope.getBinding(helperName);
-				for (let i=0; i<helperFn.referencePaths.length; i++) {
-					if (helperFn.referencePaths[i].parent === helper.node) {
-						helperFn.referencePaths.splice(i, 1);
-						helperFn.dereference();
-						break;
+				if (helperFn) {
+					for (let i=0; i<helperFn.referencePaths.length; i++) {
+						if (helperFn.referencePaths[i].parent === helper.node) {
+							helperFn.referencePaths.splice(i, 1);
+							helperFn.dereference();
+							break;
+						}
 					}
+					if (!helperFn.referenced) helperFn.path.remove();
 				}
-				if (!helperFn.referenced) helperFn.path.remove();
 
 				const key = first.node;
 				const val = helper.node.arguments[0]; 
